@@ -547,6 +547,7 @@ async function renderSession(root, live) {
         <button class="btn btn-ghost end" data-a="finish">Terminer</button>
       </header>
       <div class="progress-bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
+      ${extraOfferHTML()}
       ${st ? cardHTML(st) : `<section class="card all-done">
           <div class="h2">Toutes les séries sont faites</div>
           <p class="muted">Ajoute une série depuis la vue d'ensemble, ou termine la séance.</p>
@@ -625,8 +626,14 @@ async function renderSession(root, live) {
       timer.vibrate(40);
       await offerRestChange();
       const done = S.steps.find((s) => s.key === st.key) || st;
+      // Dernière série de l'exo : on propose discrètement d'en ajouter une, jusqu'à la prochaine validation
+      S.offerExtra = S.steps.some((s) => s.ex === st.ex && s.set > st.set) ? null : st.ex;
       const next = firstUndone(done.idx + 1);
-      if (!next) { await finish(false); return; }
+      if (!next) {
+        // Fin de séance : on laisse la place à une série de plus avant de terminer
+        if (S.offerExtra) { moveTo(null); draw(); return; }
+        await finish(false); return;
+      }
       moveTo(next);
       ensureTarget(next.ex).catch(() => {});
       if (done.rest > 0) await beginRest(done.rest, done.blockIdx);
@@ -666,6 +673,30 @@ async function renderSession(root, live) {
     await db.saveLog(log);
     rebuild();
     toast(`Série ajoutée : ${exOf(exId).name}`);
+  }
+
+  async function acceptExtra() {
+    const exId = S.offerExtra;
+    if (!exId) return;
+    S.offerExtra = null;
+    await addSet(exId);
+    const cur = curStep();
+    const added = [...S.steps].reverse().find((s) => s.ex === exId);
+    // Superset en cours dans le même bloc : la série ajoutée viendra à son tour ; sinon on y va directement
+    if (!cur || !added || cur.blockIdx !== added.blockIdx) moveTo(added || cur);
+    if (S.restEl) {
+      const nx = S.restEl.querySelector('.rest-next');
+      if (nx && curStep()) { await ensureTarget(curStep().ex).catch(() => {}); nx.innerHTML = nextPreviewHTML(); }
+      S.restEl.querySelector('.extra-offer')?.remove();
+    }
+    await go();
+  }
+
+  function extraOfferHTML() {
+    const ex = S.offerExtra && exOf(S.offerExtra);
+    if (!ex) return '';
+    return `<div class="extra-offer"><span>Dernière série de <b>${esc(ex.name)}</b> faite</span>
+      <button class="btn btn-ghost" data-a="extra">+ 1 série</button></div>`;
   }
 
   async function skipExercise() {
@@ -888,6 +919,7 @@ async function renderSession(root, live) {
       <div class="ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="bg" cx="60" cy="60" r="54"/>
         <circle class="fg" cx="60" cy="60" r="54" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="0"/></svg>
         <div class="time" role="timer">${timer.fmtClock(Math.max(0, endsAt - Date.now()))}</div></div>
+      ${extraOfferHTML()}
       <div class="rest-next">${nextPreviewHTML()}</div>
       <div class="rest-ctrl">
         <div class="rest-adj">
@@ -915,6 +947,7 @@ async function renderSession(root, live) {
       if (!a) return;
       timer.unlockAudio();
       if (a === 'skip') { stopRestUI(true); return; }
+      if (a === 'extra') { acceptExtra(); return; }
       const ends = timer.addTime(a === 'plus' ? 15 : -15);
       if (S.soundOn) timer.scheduleBeep((ends - Date.now()) / 1000);
       const rs = timer.restState();
@@ -952,6 +985,7 @@ async function renderSession(root, live) {
     if (!b) return;
     const a = b.dataset.a;
     if (a === 'validate') validate();
+    else if (a === 'extra') acceptExtra();
     else if (a === 'home') navigate('#/');
     else if (a === 'finish') finish(true);
     else if (a === 'overview') openOverview();
