@@ -393,3 +393,13 @@ textarea.note:focus { outline: none; border-color: var(--acc); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Superset : charge de l'autre exercice à préparer */
+.partner {
+  display: grid; grid-template-columns: 1fr auto; gap: 0 10px; align-items: baseline;
+  margin-top: 8px; padding: 10px 14px; border-radius: var(--radius);
+  border: 1px dashed var(--line); background: transparent;
+}
+.partner .k { grid-column: 1 / -1; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+.partner .n { font-size: 15px; color: var(--tx); min-width: 0; }
+.partner b { font-size: 18px; font-weight: 750; color: var(--acc); white-space: nowrap; }

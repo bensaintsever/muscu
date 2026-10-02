@@ -464,15 +464,29 @@ async function renderSession(root, live) {
       </button>`).join('')}</div>`;
   }
 
+  // Superset : charge à préparer pour l'autre exercice de la paire
+  function partnerHTML(st) {
+    if (st.block.type !== 'superset') return '';
+    const rows = st.block.exercises.filter((id) => id !== st.ex && exOf(id)).map((id) => {
+      const ex = exOf(id);
+      const pst = S.steps.find((s) => s.ex === id && s.set === st.set)
+        || [...S.steps].reverse().find((s) => s.ex === id);
+      if (!pst) return '';
+      const prev = [...log.sets].reverse().find((s) => s.exerciseId === id);
+      const load = prev ? prev.load : targetLoad(pst);
+      const what = ex.unit === 'reps' ? `${targetReps(pst)} reps` : `${fmtLoad(ex, load)} × ${targetReps(pst)}`;
+      return `<div class="partner"><span class="k">Prépare aussi</span><span class="n">${esc(ex.name)}</span><b class="tnum">${esc(what)}</b></div>`;
+    });
+    return rows.join('');
+  }
+
   function cardHTML(st) {
     const ex = exOf(st.ex);
     const total = S.steps.filter((s) => s.ex === st.ex).length;
     const tags = [];
     if (st.block.type === 'superset') {
       const pos = st.block.exercises.indexOf(st.ex);
-      const other = st.block.exercises.filter((id) => id !== st.ex).map((id) => exOf(id)?.name).filter(Boolean);
       tags.push(`<span class="chip">Superset ${pos + 1}/${st.block.exercises.length}</span>`);
-      if (other.length) tags.push(`<span class="chip">avec ${esc(other.join(', '))}</span>`);
     }
     if (st.kind === 'interval') tags.push('<span class="chip">Intervalle</span>');
     if (ex.undulates) tags.push(`<span class="chip ${esc(log.weekType)}">${esc(weekChip(log.weekType))}</span>`);
@@ -506,6 +520,7 @@ async function renderSession(root, live) {
       <div class="ex-set">Série <b>${st.set + 1}</b>/${total}</div>
       ${ex.note ? `<div class="ex-note">${esc(ex.note)}</div>` : ''}
       ${targetHTML(st)}
+      ${partnerHTML(st)}
       ${lastHTML(st)}
       ${body}
       ${doneSetsHTML(st.ex)}
@@ -546,6 +561,9 @@ async function renderSession(root, live) {
     const st = curStep();
     if (st) {
       await ensureTarget(st.ex);
+      if (st.block.type === 'superset') {
+        await Promise.all(st.block.exercises.filter((id) => exOf(id)).map((id) => ensureTarget(id).catch(() => {})));
+      }
       if (!S.input) S.input = defaultInput(st);
     }
     draw();
