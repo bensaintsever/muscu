@@ -428,3 +428,4 @@ textarea.note:focus { outline: none; border-color: var(--acc); }
 .next-txt { min-width: 0; flex: 1; }
 .rest .next-card { flex-direction: column; align-items: stretch; gap: 12px; }
 .rest .exm-mini { width: 100%; height: auto; aspect-ratio: 2 / 1; max-height: 26vh; border-radius: 10px; }
+.exm video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
