@@ -154,6 +154,40 @@ export function beep({ count = 2, freq = 880, dur = 0.12, gap = 0.1 } = {}) {
   } catch { /* rien */ }
 }
 
+// Bip programmé d'avance dans le moteur audio : il part à l'heure même si la page
+// est en arrière-plan et que ses minuteurs JS sont gelés.
+let scheduled = [];
+
+export function scheduleBeep(secondsFromNow) {
+  cancelScheduledBeep();
+  if (!audio || !(secondsFromNow > 0)) return;
+  try {
+    if (audio.state === 'suspended') audio.resume();
+    const t0 = audio.currentTime + secondsFromNow;
+    for (let i = 0; i < 3; i++) {
+      const t = t0 + i * 0.22;
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = i === 2 ? 1320 : 880;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.6, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+      osc.connect(gain).connect(audio.destination);
+      osc.start(t);
+      osc.stop(t + 0.16);
+      scheduled.push(osc);
+    }
+  } catch { scheduled = []; }
+}
+
+export function cancelScheduledBeep() {
+  for (const o of scheduled) { try { o.stop(0); o.disconnect(); } catch { /* rien */ } }
+  scheduled = [];
+}
+
+export const hasScheduledBeep = () => scheduled.length > 0;
+
 // Alerte de fin (repos ou maintien).
 export function alertEnd(soundOn = true) {
   vibrate(END_PATTERN);

@@ -259,3 +259,7 @@
 
 .s-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .s-actions .btn { flex: 1 1 96px; min-height: 48px; }
+
+.s-block-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 12px 0 6px; border-top: 1px solid var(--line); }
+.s-block-head .s-num { width: 104px; flex: none; }
+.s-block-head .s-input::placeholder { color: var(--dim); opacity: .7; }

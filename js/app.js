@@ -605,11 +605,13 @@ async function renderSession(root, live) {
       log.sets.push({ exerciseId: st.ex, setIndex: st.set, load, reps, ts: Date.now() });
       await db.saveLog(log);
       timer.vibrate(40);
-      const next = firstUndone(st.idx + 1);
+      await offerRestChange();
+      const done = S.steps.find((s) => s.key === st.key) || st;
+      const next = firstUndone(done.idx + 1);
       if (!next) { await finish(false); return; }
       moveTo(next);
       ensureTarget(next.ex).catch(() => {});
-      if (st.rest > 0) await beginRest(st.rest);
+      if (done.rest > 0) await beginRest(done.rest, done.blockIdx);
       await go();
     } catch (e) {
       console.error(e);
@@ -808,22 +810,50 @@ async function renderSession(root, live) {
       <div class="t">Série ${st.set + 1}/${total}${tgt ? ` · ${tgt}` : ''}</div></div>`;
   }
 
-  async function beginRest(seconds) {
+  // Repos ajusté avec ±15 s : proposé à la validation suivante comme nouveau repos du bloc
+  async function offerRestChange() {
+    const p = log.pendingRest;
+    if (!p) return;
+    log.pendingRest = null;
+    await db.saveLog(log);
+    const block = session.blocks[p.blockIdx];
+    if (!block) return;
+    const names = block.exercises.map((id) => exOf(id)?.name).filter(Boolean).join(' + ');
+    const ok = await confirmDialog({
+      title: `Garder ${timer.fmtClock(p.seconds * 1000)} de repos ?`,
+      text: `Tu as ajusté le repos après ${names}. L'appliquer à ce bloc, pour la suite de la séance et les prochaines ?`,
+      ok: 'Appliquer', cancel: 'Non',
+    });
+    if (!ok) return;
+    block.rest = p.seconds;
+    await db.saveProgram(program);
+    rebuild();
+    toast('Repos du bloc mis à jour');
+  }
+
+  async function beginRest(seconds, blockIdx) {
     try { S.soundOn = await db.getSetting('soundOn', true); } catch { /* garde la valeur */ }
     const endsAt = Date.now() + seconds * 1000;
     log.restEndsAt = endsAt;
     log.restTotal = seconds * 1000;
+    log.restInfo = { blockIdx, planned: seconds, adjusted: seconds };
     await db.saveLog(log);
     showRest(endsAt, seconds * 1000);
   }
 
-  function stopRestUI(persist = true) {
+  function stopRestUI(persist = true, keepBeep = false) {
+    if (!keepBeep) timer.cancelScheduledBeep();
     timer.stopRest();
     S.restEl?.remove();
     S.restEl = null;
-    if (persist && log.restEndsAt) {
+    if (persist && (log.restEndsAt || log.restInfo)) {
+      const ri = log.restInfo;
+      if (ri && ri.blockIdx != null && ri.adjusted > 0 && ri.adjusted !== ri.planned) {
+        log.pendingRest = { blockIdx: ri.blockIdx, seconds: ri.adjusted };
+      }
       log.restEndsAt = null;
       log.restTotal = null;
+      log.restInfo = null;
       db.saveLog(log).catch(console.error);
     }
   }
@@ -868,10 +898,12 @@ async function renderSession(root, live) {
       timer.unlockAudio();
       if (a === 'skip') { stopRestUI(true); return; }
       const ends = timer.addTime(a === 'plus' ? 15 : -15);
+      if (S.soundOn) timer.scheduleBeep((ends - Date.now()) / 1000);
       const rs = timer.restState();
       if (rs) {
         log.restEndsAt = ends;
         log.restTotal = rs.total;
+        if (log.restInfo) log.restInfo.adjusted = Math.max(15, log.restInfo.adjusted + (a === 'plus' ? 15 : -15));
         db.saveLog(log).catch(console.error);
       }
     });
@@ -883,13 +915,16 @@ async function renderSession(root, live) {
         ring.classList.toggle('soon', left <= 10000);
       },
       onEnd: (late) => {
+        const beeped = timer.hasScheduledBeep();
         if (late < 30000) {
-          timer.alertEnd(S.soundOn);
+          timer.alertEnd(S.soundOn && !beeped);
           toast("C'est reparti");
         }
-        stopRestUI(true);
+        stopRestUI(true, true);
+        setTimeout(() => timer.cancelScheduledBeep(), 1500);
       },
     });
+    if (S.soundOn) timer.scheduleBeep((endsAt - Date.now()) / 1000);
   }
 
   // ----- Événements -----

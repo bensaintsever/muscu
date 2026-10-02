@@ -27,6 +27,9 @@ export function validateProgram(program) {
   const posInt = (n) => Number.isInteger(n) && n > 0;
   for (const s of program.sessions || []) {
     if (!posInt(s.rest)) errors.push({ path: `session:${s.id}:rest`, msg: `${s.name} : repos en secondes entières > 0` });
+    for (const b of s.blocks || []) {
+      if (b.rest != null && !posInt(b.rest)) errors.push({ path: `block:${s.id}:${b.id}`, msg: `${s.name} : repos de bloc en secondes entières > 0, ou vide` });
+    }
   }
   for (const ex of Object.values(program.exercises || {})) {
     const p = `ex:${ex.id}:`;
@@ -156,10 +159,10 @@ function soundSection(ctx, on) {
 
 /* Programme */
 
-function numInput(value, { path, mode = 'numeric', label, step }) {
+function numInput(value, { path, mode = 'numeric', label, step, placeholder }) {
   return el('label', { class: 's-num' },
     el('span', { class: 's-label', text: label }),
-    el('input', { type: 'text', inputmode: mode, value: value ?? '', 'data-path': path, class: 's-input', autocomplete: 'off', step }),
+    el('input', { type: 'text', inputmode: mode, value: value ?? '', 'data-path': path, class: 's-input', autocomplete: 'off', step, placeholder }),
   );
 }
 
@@ -168,15 +171,22 @@ function programSection(ctx, program) {
   const form = el('form', { class: 's-program', novalidate: true });
 
   for (const s of draft.sessions || []) {
-    const ids = [];
-    for (const b of s.blocks || []) for (const id of b.exercises || []) if (!ids.includes(id) && draft.exercises[id]) ids.push(id);
-
     const group = el('div', { class: 's-session' },
       el('div', { class: 's-session-head' },
         el('h3', { class: 's-session-name', text: s.name }),
         numInput(s.rest, { path: `session:${s.id}:rest`, label: 'Repos (s)' }),
       ),
     );
+    const seen = new Set();
+    for (const b of s.blocks || []) {
+      const ids = (b.exercises || []).filter((id) => draft.exercises[id] && !seen.has(id));
+      ids.forEach((id) => seen.add(id));
+      if (!ids.length) continue;
+      const kind = b.type === 'superset' ? 'Superset' : b.type === 'interval' ? 'Intervalle' : 'Exercice';
+      group.append(el('div', { class: 's-block-head' },
+        el('span', { class: 'muted s-small', text: `${kind} · repos après ${b.type === 'superset' ? 'la paire' : 'chaque série'}` }),
+        numInput(b.rest, { path: `block:${s.id}:${b.id}`, label: `Repos (s)`, placeholder: String(s.rest ?? '') }),
+      ));
     for (const id of ids) {
       const ex = draft.exercises[id];
       const p = `ex:${id}:`;
@@ -203,6 +213,7 @@ function programSection(ctx, program) {
         ),
       ));
     }
+    }
     form.append(group);
   }
 
@@ -215,6 +226,11 @@ function programSection(ctx, program) {
       if (kind === 'session') {
         const s = next.sessions.find((x) => x.id === id);
         if (s) s[field] = parseNum(input.value);
+      } else if (kind === 'block') {
+        const b = next.sessions.find((x) => x.id === id)?.blocks?.find((x) => x.id === field);
+        if (!b) continue;
+        if (String(input.value).trim() === '') delete b.rest;
+        else b.rest = parseNum(input.value);
       } else {
         const ex = next.exercises[id];
         if (!ex) continue;
