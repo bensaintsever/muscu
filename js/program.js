@@ -25,7 +25,7 @@ export const PROGRAM = {
     // — Jambes (suit l'ondulation du plan semi) —
     'fentes-marchees': { id: 'fentes-marchees', name: 'Fentes marchées lestées', sets: 3, repMin: 10, repMax: 14, increment: 4, loadType: 'dumbbell', undulates: true, unit: 'kg', note: 'Charge totale des deux haltères' },
     'step-up': { id: 'step-up', name: 'Step-up lesté haltères', sets: 4, repMin: 10, repMax: 14, increment: 2, loadType: 'dumbbell', undulates: true, unit: 'kg', note: 'Genou d\'appui qui ne rentre pas, bassin stable' },
-    'leg-curl': { id: 'leg-curl', name: 'Leg curl', sets: 3, repMin: 8, repMax: 12, increment: 5, loadType: 'machine', undulates: true, unit: 'kg' },
+    'leg-curl': { id: 'leg-curl', name: 'Leg curl assis', sets: 3, repMin: 8, repMax: 12, increment: 5, loadType: 'machine', undulates: true, unit: 'kg' },
     'mollet-presse': { id: 'mollet-presse', name: 'Mollets à la presse', sets: 4, repMin: 12, repMax: 20, increment: 10, loadType: 'machine', undulates: true, unit: 'kg' },
     'wallball-thruster': { id: 'wallball-thruster', name: 'Simulation wall ball : maintien + thrusters', sets: 5, repMin: 12, repMax: 16, increment: 2, loadType: 'dumbbell', undulates: true, unit: 'kg', note: '20 s haltères au-dessus de la tête, puis thrusters max' },
   },
