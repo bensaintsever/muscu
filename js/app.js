@@ -1,6 +1,7 @@
 import * as db from './db.js';
 import * as prog from './progression.js';
 import * as timer from './timer.js';
+import { mediaHTML } from './media.js';
 
 const appEl = document.getElementById('app');
 const navEl = document.getElementById('nav');
@@ -515,6 +516,7 @@ async function renderSession(root, live) {
     }
 
     return `<section class="card ex-card">
+      ${mediaHTML(st.ex, { size: 'hero', alt: ex.name })}
       ${tags.length ? `<div class="ex-tag">${tags.join('')}</div>` : ''}
       <h1 class="ex-name">${esc(ex.name)}</h1>
       <div class="ex-set">Série <b>${st.set + 1}</b>/${total}</div>
@@ -854,9 +856,9 @@ async function renderSession(root, live) {
       const load = ex.unit === 'reps' ? '' : fmtLoad(ex, defaultInput(st).load);
       tgt = `Cible <b>${esc(load ? `${load} × ${reps}` : `${reps} reps`)}</b>`;
     }
-    return `<div class="card"><div class="k">Ensuite</div>
+    return `<div class="card next-card">${mediaHTML(st.ex, { size: 'mini', alt: ex.name })}<div class="next-txt"><div class="k">Ensuite</div>
       <div class="n">${esc(ex.name)}</div>
-      <div class="t">Série ${st.set + 1}/${total}${tgt ? ` · ${tgt}` : ''}</div></div>`;
+      <div class="t">Série ${st.set + 1}/${total}${tgt ? ` · ${tgt}` : ''}</div></div></div>`;
   }
 
   // Repos ajusté avec ±15 s : proposé à la validation suivante comme nouveau repos du bloc

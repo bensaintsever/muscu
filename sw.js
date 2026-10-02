@@ -1,5 +1,5 @@
 // Service worker : réseau d'abord (mises à jour rapides), cache en repli (hors ligne en salle).
-const VERSION = '2026-10-02-5';
+const VERSION = '2026-10-02-6';
 const CACHE = `muscu-${VERSION}`;
 const NETWORK_TIMEOUT = 4000;
 
@@ -15,10 +15,49 @@ const ASSETS = [
   'js/program.js',
   'js/history.js',
   'js/settings.js',
+  'js/media.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
+  'img/ex/chest-row-incline/0.jpg',
+  'img/ex/chest-row-incline/1.jpg',
+  'img/ex/crunch/0.jpg',
+  'img/ex/crunch/1.jpg',
+  'img/ex/curl-cable/0.jpg',
+  'img/ex/curl-cable/1.jpg',
+  'img/ex/curl-marteau-cable/0.jpg',
+  'img/ex/curl-marteau-cable/1.jpg',
+  'img/ex/dc-incline-halteres/0.jpg',
+  'img/ex/dc-incline-halteres/1.jpg',
+  'img/ex/developpe-barre/0.jpg',
+  'img/ex/developpe-barre/1.jpg',
+  'img/ex/ecarte-banc/0.jpg',
+  'img/ex/ecarte-banc/1.jpg',
+  'img/ex/ecarte-incline/0.jpg',
+  'img/ex/ecarte-incline/1.jpg',
+  'img/ex/elevation-laterale/0.jpg',
+  'img/ex/elevation-laterale/1.jpg',
+  'img/ex/extension-triceps-haut/0.jpg',
+  'img/ex/extension-triceps-haut/1.jpg',
+  'img/ex/fentes-marchees/0.jpg',
+  'img/ex/fentes-marchees/1.jpg',
+  'img/ex/leg-curl/0.jpg',
+  'img/ex/leg-curl/1.jpg',
+  'img/ex/mollet-presse/0.jpg',
+  'img/ex/mollet-presse/1.jpg',
+  'img/ex/oiseau-incline/0.jpg',
+  'img/ex/oiseau-incline/1.jpg',
+  'img/ex/pushdown-cable/0.jpg',
+  'img/ex/pushdown-cable/1.jpg',
+  'img/ex/step-up/0.jpg',
+  'img/ex/step-up/1.jpg',
+  'img/ex/tirage-un-bras/0.jpg',
+  'img/ex/tirage-un-bras/1.jpg',
+  'img/ex/traction-pronation/0.jpg',
+  'img/ex/traction-pronation/1.jpg',
+  'img/ex/wallball-thruster/0.jpg',
+  'img/ex/wallball-thruster/1.jpg',
 ];
 
 self.addEventListener('install', (event) => {
@@ -52,6 +91,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // Illustrations : elles ne changent pas, cache d'abord
+  if (url.pathname.includes('/img/ex/')) { event.respondWith(cacheFirst(req)); return; }
   event.respondWith(networkFirst(event, req));
 });
 
@@ -85,4 +126,17 @@ async function networkFirst(event, req) {
 async function fromCache(cache, req, isNav) {
   if (isNav) return (await cache.match('index.html')) || (await cache.match('./'));
   return cache.match(req, { ignoreSearch: true });
+}
+
+async function cacheFirst(req) {
+  const cache = await caches.open(CACHE);
+  const hit = await cache.match(req, { ignoreSearch: true });
+  if (hit) return hit;
+  try {
+    const res = await fetch(req);
+    if (res.ok) cache.put(req, res.clone()).catch(() => {});
+    return res;
+  } catch {
+    return new Response('', { status: 504 });
+  }
 }

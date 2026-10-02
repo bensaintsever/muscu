@@ -2,6 +2,8 @@
 
 /* ---------- Fonctions pures (exportées pour les tests) ---------- */
 
+import { mediaHTML } from './media.js';
+
 const DAY = 86400000;
 
 export function parseDate(s) {
@@ -186,6 +188,14 @@ export function sparkPoints(values, w = 72, h = 24, pad = 3) {
 }
 
 /* ---------- Utilitaires DOM ---------- */
+
+function media(exId, size, alt) {
+  const html = mediaHTML(exId, { size, alt });
+  if (!html) return null;
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
 
 function el(tag, attrs = {}, ...kids) {
   const n = document.createElement(tag);
@@ -411,6 +421,7 @@ export async function renderProgress(container, ctx, exerciseId) {
       const repsMode = isRepsMode(ex, hist);
       const pts = buildPoints(hist, ctx.prog.e1rm).filter((p) => !ex.undulates || !isLight(p.weekType));
       list.append(el('button', { class: 'list-item h-ex-row', type: 'button', onclick: () => ctx.navigate('#/progress/' + encodeURIComponent(id)) },
+        media(id, 'thumb', ex.name),
         el('div', { class: 'h-ex-row-main' },
           el('span', { class: 'h-ex-row-name', text: ex.name }),
           el('span', { class: 'muted h-num', text: last ? perfLabel(last.sets, ex.unit) : 'Pas encore de données' }),
@@ -452,6 +463,8 @@ async function renderExercise(container, ctx, program, exerciseId) {
   const points = buildPoints(history, ctx.prog.e1rm);
 
   view.append(el('h1', { class: 'h1', text: ex.name }));
+  const hero = media(exerciseId, 'hero', ex.name);
+  if (hero) view.append(hero);
   if (ex.note) view.append(el('p', { class: 'muted h-exnote', text: ex.note }));
 
   // Prochaine cible

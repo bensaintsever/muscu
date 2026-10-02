@@ -413,3 +413,18 @@ textarea.note:focus { outline: none; border-color: var(--acc); }
 .extra-offer b { color: var(--tx); font-weight: 600; }
 .extra-offer .btn { min-height: 44px; padding: 0 14px; white-space: nowrap; flex: none; }
 .rest .extra-offer { width: 100%; max-width: 420px; }
+
+/* Illustrations animées (deux photos en fondu enchaîné) */
+.exm { position: relative; overflow: hidden; background: #0a0d12; border-radius: 10px; isolation: isolate; }
+.exm img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.exm-b { opacity: 0; animation: exm-fade 2.6s ease-in-out infinite; }
+.exm::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); pointer-events: none; }
+@keyframes exm-fade { 0%, 32% { opacity: 0; } 50%, 82% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .exm-b { animation: none; } }
+.exm-hero { aspect-ratio: 2 / 1; margin: -4px -2px 14px; }
+.exm-mini { width: 84px; height: 60px; flex: none; border-radius: 8px; }
+.exm-thumb { width: 64px; height: 46px; flex: none; border-radius: 8px; }
+.next-card { display: flex; align-items: center; gap: 14px; }
+.next-txt { min-width: 0; flex: 1; }
+.rest .next-card { flex-direction: column; align-items: stretch; gap: 12px; }
+.rest .exm-mini { width: 100%; height: auto; aspect-ratio: 2 / 1; max-height: 26vh; border-radius: 10px; }

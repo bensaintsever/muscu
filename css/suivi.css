@@ -263,3 +263,5 @@
 .s-block-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 12px 0 6px; border-top: 1px solid var(--line); }
 .s-block-head .s-num { width: 104px; flex: none; }
 .s-block-head .s-input::placeholder { color: var(--dim); opacity: .7; }
+
+.h-view > .exm-hero { aspect-ratio: 3 / 2; margin: 4px 0 12px; border-radius: var(--radius); }
