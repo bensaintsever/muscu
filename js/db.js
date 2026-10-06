@@ -1,10 +1,10 @@
 // Stockage IndexedDB : base `muscu`, stores `logs` et `kv`.
-import { PROGRAM, REFERENCE_LOGS } from './program.js';
+import { PROGRAM, REFERENCE_LOGS, MIGRATIONS } from './program.js';
 
 const DB_NAME = 'muscu';
 const DB_VERSION = 1;
 // Clés du store kv qui ne sont pas des réglages utilisateur.
-const INTERNAL_KEYS = new Set(['seeded', 'program']);
+const INTERNAL_KEYS = new Set(['seeded', 'program', 'migrations']);
 
 let dbPromise = null;
 let initPromise = null;
@@ -81,6 +81,15 @@ export function init() {
       const logs = tx.objectStore('logs');
       for (const log of REFERENCE_LOGS) logs.put(clone(log));
       kv.put(true, 'seeded');
+    }
+    // Migrations du programme : chacune une seule fois, sans toucher aux réglages faits à la main
+    const applied = (await req(kv.get('migrations'))) || [];
+    const pending = MIGRATIONS.filter((m) => !applied.includes(m.id));
+    if (pending.length) {
+      const program = (await req(kv.get('program'))) || clone(PROGRAM);
+      for (const m of pending) m.apply(program);
+      kv.put(program, 'program');
+      kv.put([...applied, ...pending.map((m) => m.id)], 'migrations');
     }
     await done(tx);
     try {

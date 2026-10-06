@@ -1,6 +1,19 @@
 // Programme initial et séances de référence (saisie du 02/10/2026).
 // Copié en base au premier lancement, éditable ensuite depuis Réglages.
 
+// Évolutions du programme appliquées une seule fois aux bases déjà installées.
+export const MIGRATIONS = [
+  {
+    id: '2026-10-06-reverse-crunch',
+    apply(program) {
+      program.exercises['reverse-crunch'] ??= structuredClone(PROGRAM.exercises['reverse-crunch']);
+      for (const s of program.sessions) {
+        for (const b of s.blocks) b.exercises = b.exercises.map((id) => (id === 'crunch' ? 'reverse-crunch' : id));
+      }
+    },
+  },
+];
+
 export const PROGRAM = {
   version: 1,
   exercises: {
@@ -11,6 +24,7 @@ export const PROGRAM = {
     'ecarte-banc': { id: 'ecarte-banc', name: 'Écarté couché haltères', sets: 3, repMin: 10, repMax: 15, increment: 2, loadType: 'dumbbell', undulates: false, unit: 'kg' },
     'tirage-un-bras': { id: 'tirage-un-bras', name: 'Tirage penché un bras haltère', sets: 3, repMin: 10, repMax: 15, increment: 2, loadType: 'dumbbell', undulates: false, unit: 'kg' },
     'ecarte-incline': { id: 'ecarte-incline', name: 'Écarté incliné haltères', sets: 3, repMin: 8, repMax: 12, increment: 2, loadType: 'dumbbell', undulates: false, unit: 'kg' },
+    'reverse-crunch': { id: 'reverse-crunch', name: 'Reverse crunch (bonus)', sets: 3, repMin: 12, repMax: 20, increment: 0, loadType: 'bodyweight', undulates: false, unit: 'reps', note: 'Bassin qui décolle, sans élan' },
     'crunch': { id: 'crunch', name: 'Crunch (bonus)', sets: 3, repMin: 15, repMax: 25, increment: 0, loadType: 'bodyweight', undulates: false, unit: 'reps' },
 
     // — Épaule / Bras —
@@ -37,7 +51,7 @@ export const PROGRAM = {
         { id: 'pd2', type: 'single', exercises: ['dc-incline-halteres'] },
         { id: 'pd3', type: 'superset', exercises: ['chest-row-incline', 'ecarte-banc'] },
         { id: 'pd4', type: 'superset', exercises: ['tirage-un-bras', 'ecarte-incline'] },
-        { id: 'pd5', type: 'single', exercises: ['crunch'] },
+        { id: 'pd5', type: 'single', exercises: ['reverse-crunch'] },
       ],
     },
     {

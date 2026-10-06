@@ -429,3 +429,18 @@ textarea.note:focus { outline: none; border-color: var(--acc); }
 .rest .next-card { flex-direction: column; align-items: stretch; gap: 12px; }
 .rest .exm-mini { width: 100%; height: auto; aspect-ratio: 2 / 1; max-height: 26vh; border-radius: 10px; }
 .exm video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.next-row { display: grid; grid-template-columns: 1fr auto; gap: 0 12px; align-items: baseline; }
+.next-row + .next-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.next-row .n { grid-column: 1; }
+.next-row .t { grid-column: 1; margin-top: 0; }
+.next-load { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 22px; font-weight: 750; color: var(--acc); white-space: nowrap; }
+/* L'objectif de progression reste indicatif : les champs reprennent la séance précédente */
+.target { padding: 10px 14px; }
+.target .val { font-size: 17px; }
+/* Repos : tout doit tenir sans défiler, même avec l'encart et un superset */
+.rest .ring { width: min(72vw, 36dvh, 300px); margin: 8px auto 4px; }
+.rest .exm-mini { max-height: 20dvh; }
+.rest .next-card.multi .exm-mini { max-height: 13dvh; aspect-ratio: 3 / 1; }
+.rest-next .n { font-size: 18px; }
+.rest-adj .btn { min-height: 56px; }
+.rest .skip { min-height: 64px; margin-top: 10px; }

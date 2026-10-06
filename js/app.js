@@ -408,11 +408,46 @@ async function renderSession(root, live) {
     return last?.load ?? 0;
   }
 
+  // Séance de référence pour le pré-remplissage : la dernière faite, ou pour un exo qui ondule
+  // la dernière à pleine charge, ramenée au pourcentage de la semaine.
+  function lastSetPlan(exId, setIdx) {
+    const ex = exOf(exId);
+    const hist = S.histories[exId] || [];
+    if (!hist.length) return null;
+    const light = ex.undulates && (log.weekType === 'moyenne' || log.weekType === 'legere');
+    const base = ex.undulates
+      ? [...hist].reverse().find((h) => h.isReference || h.weekType === 'lourde' || h.weekType === 'normale') || hist.at(-1)
+      : hist.at(-1);
+    const set = base.sets?.[setIdx] ?? base.sets?.at(-1);
+    if (!set) return null;
+    let load = ex.unit === 'reps' ? 0 : (Number(set.load) || 0);
+    if (light && load > 0) load = prog.roundLoad(load * (prog.WEEK_TYPES[log.weekType]?.factor ?? 1), ex.increment);
+    return { load, reps: set.reps };
+  }
+
+  // Pré-remplissage : exactement la séance précédente, série par série. Seule exception :
+  // si la charge a été changée plus tôt dans la séance, on garde la nouvelle.
+  function plannedInput(exId, setIdx) {
+    const ex = exOf(exId);
+    const plan = lastSetPlan(exId, setIdx);
+    let load = plan ? plan.load : targetLoad({ ex: exId, set: setIdx });
+    const reps = plan ? plan.reps : targetReps({ ex: exId, set: setIdx });
+    const prev = [...log.sets].filter((s) => s.exerciseId === exId && s.setIndex < setIdx).sort((a, b) => b.setIndex - a.setIndex)[0];
+    if (prev && ex.unit !== 'reps') {
+      const prevPlan = lastSetPlan(exId, prev.setIndex);
+      if (!prevPlan || prev.load !== prevPlan.load) load = prev.load;
+    }
+    return { load: ex.unit === 'reps' ? 0 : load, reps };
+  }
+
   function defaultInput(st) {
-    const ex = exOf(st.ex);
-    const prev = [...log.sets].reverse().find((s) => s.exerciseId === st.ex);
-    const load = ex.unit === 'reps' ? 0 : (prev ? prev.load : targetLoad(st));
-    return { load, reps: targetReps(st) };
+    return plannedInput(st.ex, st.set);
+  }
+
+  function planLabel(exId, setIdx) {
+    const ex = exOf(exId);
+    const p = plannedInput(exId, setIdx);
+    return ex.unit === 'reps' ? `${p.reps} reps` : `${fmtLoad(ex, p.load)} × ${p.reps}`;
   }
 
   // ----- Rendu principal -----
@@ -441,7 +476,7 @@ async function renderSession(root, live) {
     const val = loadTxt ? `${loadTxt} × ${reps}` : `${reps} reps`;
     const all = (t.reps || []).length > 1 ? ` · objectif ${t.reps.join(' / ')}` : '';
     return `<div class="target act-${esc(t.action)}">
-      <div class="lbl">Cible</div>
+      <div class="lbl">Pour progresser</div>
       <div class="val">${esc(val)}</div>
       <div class="reason">${esc(t.reason || '')}${esc(all)}</div>
     </div>`;
@@ -473,9 +508,7 @@ async function renderSession(root, live) {
       const pst = S.steps.find((s) => s.ex === id && s.set === st.set)
         || [...S.steps].reverse().find((s) => s.ex === id);
       if (!pst) return '';
-      const prev = [...log.sets].reverse().find((s) => s.exerciseId === id);
-      const load = prev ? prev.load : targetLoad(pst);
-      const what = ex.unit === 'reps' ? `${targetReps(pst)} reps` : `${fmtLoad(ex, load)} × ${targetReps(pst)}`;
+      const what = planLabel(id, pst.set);
       return `<div class="partner"><span class="k">Prépare aussi</span><span class="n">${esc(ex.name)}</span><b class="tnum">${esc(what)}</b></div>`;
     });
     return rows.join('');
@@ -848,17 +881,18 @@ async function renderSession(root, live) {
     const st = curStep();
     if (!st) return '';
     const ex = exOf(st.ex);
-    const t = S.targets[st.ex];
-    const total = S.steps.filter((s) => s.ex === st.ex).length;
-    let tgt = '';
-    if (t) {
-      const reps = targetReps(st);
-      const load = ex.unit === 'reps' ? '' : fmtLoad(ex, defaultInput(st).load);
-      tgt = `Cible <b>${esc(load ? `${load} × ${reps}` : `${reps} reps`)}</b>`;
-    }
-    return `<div class="card next-card">${mediaHTML(st.ex, { size: 'mini', alt: ex.name })}<div class="next-txt"><div class="k">Ensuite</div>
-      <div class="n">${esc(ex.name)}</div>
-      <div class="t">Série ${st.set + 1}/${total}${tgt ? ` · ${tgt}` : ''}</div></div></div>`;
+    // Superset : les exos de la paire qui restent à faire dans ce tour, chacun avec sa charge
+    const group = st.block.type === 'superset'
+      ? st.block.exercises.map((id) => S.steps.find((s) => s.ex === id && s.set === st.set && !isDone(s))).filter(Boolean)
+      : [st];
+    const rows = group.map((g) => {
+      const gx = exOf(g.ex);
+      const total = S.steps.filter((s) => s.ex === g.ex).length;
+      return `<div class="next-row"><div class="n">${esc(gx.name)}</div>
+        <div class="t">Série ${g.set + 1}/${total}</div><b class="next-load tnum">${esc(planLabel(g.ex, g.set))}</b></div>`;
+    }).join('');
+    return `<div class="card next-card${group.length > 1 ? ' multi' : ''}">${mediaHTML(st.ex, { size: 'mini', alt: ex.name })}<div class="next-txt"><div class="k">${group.length > 1 ? 'Ensuite · superset' : 'Ensuite'}</div>
+      ${rows}</div></div>`;
   }
 
   // Repos ajusté avec ±15 s : proposé à la validation suivante comme nouveau repos du bloc
@@ -937,8 +971,9 @@ async function renderSession(root, live) {
     const ring = el.querySelector('.ring');
 
     const st = curStep();
-    if (st && !S.targets[st.ex]) {
-      ensureTarget(st.ex).then(() => {
+    const need = st ? st.block.exercises.filter((id) => exOf(id) && !S.targets[id]) : [];
+    if (need.length) {
+      Promise.all(need.map((id) => ensureTarget(id))).then(() => {
         const nx = el.querySelector('.rest-next');
         if (nx) nx.innerHTML = nextPreviewHTML();
       }).catch(() => {});
