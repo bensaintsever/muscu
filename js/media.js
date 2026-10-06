@@ -2,7 +2,7 @@
 // Sources : free-exercise-db (github.com/yuhonas/free-exercise-db), domaine public (Unlicense) ;
 // pompes lestées : mêmes photos que les pompes ; fentes marchées : vidéo wger.de (exercice 206, auteur Goulart, CC BY-SA), recadrée en boucle.
 
-const AVAILABLE = new Set('barre-front-barre barre-front-halteres chest-row-incline crunch curl-barre curl-cable curl-incline curl-marteau-cable curl-marteau-halteres dc-incline-halteres dead-bug developpe-barre ecarte-banc ecarte-incline ecarte-poulie elevation-laterale extension-triceps-haut face-pull farmer-carry fentes-marchees hip-thrust leg-curl mollet-presse oiseau-incline pallof-press pompes pompes-lestees presse pull-apart pushdown-cable pushdown-corde reverse-crunch rowing-barre rowing-poulie-basse sdt-roumain step-up tirage-poulie-haute-1bras tirage-un-bras traction-neutre traction-pronation wallball-thruster'.split(' '));
+const AVAILABLE = new Set('barre-front-barre barre-front-halteres chest-row-incline crunch curl-barre curl-cable curl-incline curl-marteau-cable curl-marteau-halteres dc-incline-halteres dead-bug developpe-barre ecarte-banc ecarte-incline ecarte-poulie elevation-laterale elevation-laterale-poulie extension-triceps-haut face-pull farmer-carry fentes-marchees hip-thrust leg-curl mollet-presse oiseau-incline pallof-press pompes pompes-lestees presse pull-apart pushdown-cable pushdown-corde reverse-crunch rowing-barre rowing-poulie-basse sdt-roumain step-up tirage-poulie-haute-1bras tirage-un-bras traction-neutre traction-pronation wallball-thruster'.split(' '));
 
 // Point focal du recadrage quand la tête sort du cadre
 const FOCUS = { 'traction-pronation': 'center 0%', 'step-up': 'center 10%' };

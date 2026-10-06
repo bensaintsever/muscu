@@ -30,6 +30,7 @@ export const EXERCISES = Object.fromEntries([
   BW('pompes', 'Pompes', 3, 10, 25, { note: 'Max moins 2 reps (RIR 2), gainage serré' }),
   E('pallof-press', 'Pallof press câble', 3, 10, 12, 2.5, 'cable', { note: 'Par côté. Le buste ne tourne pas' }),
   E('face-pull', 'Face pull corde', 3, 12, 15, 2.5, 'cable'),
+  E('elevation-laterale-poulie', 'Élévation latérale poulie', 3, 12, 15, 1.25, 'cable', { note: 'Au poste vis-à-vis, comme le face pull', start: { load: 5 } }),
   E('barre-front-halteres', 'Barre au front haltères, banc incliné', 3, 8, 12, 2, 'dumbbell', { note: `Même banc incliné que le curl. ${ONE}`, start: { load: 10 } }),
   E('curl-incline', 'Curl incliné haltères', 3, 8, 12, 2, 'dumbbell', { note: ONE, start: { load: 10 } }),
   E('pushdown-corde', 'Pushdown corde', 3, 10, 15, 2.5, 'cable', { start: { load: 25 } }),
@@ -121,21 +122,22 @@ export const CYCLES = [
     overrides: {
       'traction-pronation': { sets: 4, repMin: 6, repMax: 8 },
       'developpe-barre': { sets: 4, repMin: 5, repMax: 7 },
+      'ecarte-incline': { note: 'Même banc que le chest row, sans changer l\'inclinaison' },
     },
     sessions: [
       { id: 'jambes', name: 'Jambes', weekday: 1, fromBase: true },
       session('pec-dos', 'Pec / Dos', 3, 90, [
         anchor('pd1', 'traction-pronation'),
         anchor('pd2', 'dc-incline-halteres'),
-        ss('pd3', 'chest-row-incline', 'pompes'),
+        ss('pd3', 'chest-row-incline', 'ecarte-incline'),
         ss('pd4', 'tirage-poulie-haute-1bras', 'ecarte-poulie', 75),
         one('pd5', 'pallof-press', 45),
       ]),
       session('epaule-bras', 'Épaule / Bras', 5, 75, [
         anchor('eb1', 'developpe-barre'),
-        ss('eb2', 'elevation-laterale', 'face-pull'),
+        ss('eb2', 'elevation-laterale-poulie', 'face-pull'),
         ss('eb3', 'barre-front-halteres', 'curl-incline'),
-        ss('eb4', 'pushdown-corde', 'curl-marteau-halteres', 60),
+        ss('eb4', 'pushdown-corde', 'curl-marteau-cable', 60),
       ]),
     ],
     challenge: { tests: [
@@ -266,7 +268,7 @@ export const CYCLES = [
       'suitcase-carry': { sets: 2, repMin: 40, repMax: 40 },
       'pompes': { sets: 3, repMin: 15, repMax: 15 },
       'face-pull': { repMin: 15, repMax: 15 },
-      'elevation-laterale': { repMin: 12, repMax: 15 },
+      'elevation-laterale-poulie': { repMin: 12, repMax: 15 },
       'wallball-reel': { repMin: 25, repMax: 30 },
     },
     sessions: [
@@ -286,9 +288,9 @@ export const CYCLES = [
       ]),
       session('epaule-bras', 'Épaule / Bras', 5, 75, [
         anchor('eb1', 'developpe-barre'),
-        ss('eb2', 'elevation-laterale', 'face-pull'),
+        ss('eb2', 'elevation-laterale-poulie', 'face-pull'),
         ss('eb3', 'curl-incline', 'barre-front-halteres'),
-        ss('eb4', 'pushdown-corde', 'curl-marteau-halteres', 60),
+        ss('eb4', 'pushdown-corde', 'curl-marteau-cable', 60),
         one('eb5', 'burpees', 60),
       ]),
       maison(6),
@@ -328,7 +330,7 @@ export const CYCLES = [
       'pompes': { sets: 3, repMin: 15, repMax: 15 },
       'suitcase-carry': { sets: 2, repMin: 40, repMax: 40 },
       'face-pull': { repMin: 15, repMax: 15 },
-      'elevation-laterale': { repMin: 12, repMax: 15 },
+      'elevation-laterale-poulie': { repMin: 12, repMax: 15 },
       'wallball-reel': { repMin: 25, repMax: 30 },
     },
     sessions: [
@@ -346,8 +348,8 @@ export const CYCLES = [
       ]),
       session('epaule-bras', 'Épaule / Bras', 5, 75, [
         anchor('eb1', 'developpe-barre'),
-        ss('eb2', 'elevation-laterale', 'face-pull'),
-        ss('eb3', 'curl-marteau-halteres', 'pushdown-corde', 60),
+        ss('eb2', 'elevation-laterale-poulie', 'face-pull'),
+        ss('eb3', 'curl-marteau-cable', 'pushdown-corde', 60),
       ]),
       maison(6),
       session('repetition-generale', 'Répétition générale', 1, 0, [

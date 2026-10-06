@@ -159,7 +159,7 @@ test('bloc 1 : supersets au même poste, ancres seules à 2 min, rowing poulie b
   const p = prog('b1-derniere-charge');
   const pd = sess(p, 'pec-dos');
   assert.deepEqual(pd.blocks.filter((b) => b.type === 'superset').map((b) => b.exercises),
-    [['chest-row-incline', 'pompes'], ['tirage-poulie-haute-1bras', 'ecarte-poulie']]);
+    [['chest-row-incline', 'ecarte-incline'], ['tirage-poulie-haute-1bras', 'ecarte-poulie']]);
   assert.ok(!JSON.stringify(p.sessions).includes('rowing-poulie-basse'));
   assert.deepEqual(pd.blocks.slice(0, 2).map((b) => [b.type, b.rest, !!b.cue]), [['single', 120, true], ['single', 120, true]]);
   assert.equal(p.exercises['traction-pronation'].sets, 4);
@@ -280,6 +280,12 @@ test('durée estimée des séances de salle : 45 à 60 min', () => {
 
 // ---------- Pré-remplissage et suggestions ----------
 
+test('bloc 1 : chaque superset d\'Épaule / Bras au même poste (poulie)', () => {
+  const eb = sess(prog('b1-derniere-charge'), 'epaule-bras').blocks.filter((b) => b.type === 'superset').map((b) => b.exercises);
+  assert.deepEqual(eb[0], ['elevation-laterale-poulie', 'face-pull']);
+  assert.deepEqual(eb[2], ['pushdown-corde', 'curl-marteau-cable']);
+});
+
 test('pré-remplissage : nouvel exercice → charge de départ du bloc, sinon cible de suggest', () => {
   const p = prog('b1-derniere-charge');
   const pre = (id) => {
@@ -288,6 +294,7 @@ test('pré-remplissage : nouvel exercice → charge de départ du bloc, sinon ci
   };
   assert.deepEqual(pre('curl-marteau-halteres'), { load: 12, reps: 10 });
   assert.deepEqual(pre('pushdown-corde'), { load: 25, reps: 10 });
+  assert.deepEqual(pre('elevation-laterale-poulie'), { load: 5, reps: 12 });
   assert.deepEqual(pre('ecarte-poulie'), { load: 0, reps: 12 });
   assert.deepEqual(pre('pompes'), { load: 0, reps: 10 });
   assert.match(suggest(p.exercises['curl-incline'], [], 'normale').reason, /départ/);
