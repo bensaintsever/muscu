@@ -1,5 +1,5 @@
 // Service worker : réseau d'abord (mises à jour rapides), cache en repli (hors ligne en salle).
-const VERSION = '2026-10-06-2';
+const VERSION = '2026-10-06-3';
 const CACHE = `muscu-${VERSION}`;
 const NETWORK_TIMEOUT = 4000;
 
@@ -9,6 +9,15 @@ const ASSETS = [
   'css/app.css',
   'css/suivi.css',
   'js/app.js',
+  'js/ui.js',
+  'js/views/home.js',
+  'js/views/recap.js',
+  'js/session/view.js',
+  'js/session/steps.js',
+  'js/session/prefill.js',
+  'js/session/cards.js',
+  'js/session/dialogs.js',
+  'js/session/rest.js',
   'js/timer.js',
   'js/db.js',
   'js/progression.js',

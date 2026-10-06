@@ -28,8 +28,19 @@ Une app installable sur Pixel 8 Pro (Chrome Android) qui :
 | `tests/progression.test.mjs` | tests Node de `progression.js` | agent **Data** |
 | `index.html` | coquille, nav, conteneur des vues | agent **Séance** |
 | `css/app.css` | styles (tokens de couleur sur `:root`) | agent **Séance** |
-| `js/app.js` | routeur par hash, vue Accueil, vue Séance en cours, récap de fin | agent **Séance** |
+| `js/app.js` | point d'entrée : démarrage, routeur par hash, `ctx`, toast, nav | agent **Séance** |
+| `js/ui.js` | helpers partagés : `esc`, formats (`fmt*`), `ICONS`, modales (`openModal`, `confirmDialog`), `errorCard` | agent **Séance** |
+| `js/views/home.js` | vue Accueil, démarrage d'une séance | agent **Séance** |
+| `js/views/recap.js` | récap de fin de séance | agent **Séance** |
+| `js/session/view.js` | vue Séance en cours : état, validation, navigation entre séries, maintien wall ball | agent **Séance** |
+| `js/session/steps.js` | logique pure de la séance : `buildSteps`, reprise, dernière série d'un exo, groupe affiché au repos | agent **Séance** |
+| `js/session/prefill.js` | logique pure du pré-remplissage (séance précédente série par série, ondulation, charge modifiée) | agent **Séance** |
+| `js/session/cards.js` | HTML de l'écran de séance (carte d'exo, steppers, cible, offre « + 1 série ») | agent **Séance** |
+| `js/session/dialogs.js` | steppers, modales de correction d'une série et de vue d'ensemble | agent **Séance** |
+| `js/session/rest.js` | écran de repos, ±15 s, bip programmé, offre de garder le repos ajusté | agent **Séance** |
+| `tests/session.test.mjs` | tests Node de `steps.js`, `prefill.js` et des migrations | agent **Séance** |
 | `js/timer.js` | minuteur de repos, wake lock, vibration, son | agent **Séance** |
+| `js/media.js` | illustrations des exercices | agent **Séance** |
 | `js/history.js` | vues Historique (liste des séances, détail) et Progression (graphe par exo) | agent **Suivi** |
 | `js/settings.js` | vue Réglages : édition du programme, type de semaine forcé, export/import | agent **Suivi** |
 | `manifest.webmanifest`, `sw.js`, `icons/` | installabilité, hors ligne | agent **Suivi** |
