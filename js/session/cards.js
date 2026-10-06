@@ -1,12 +1,13 @@
 // HTML de l'écran de séance. S = état de la séance (voir view.js).
-import { esc, fmtN, fmtDate, fmtLoad, fmtSets, fmtElapsed, weekLabel, weekChip, ICONS } from '../ui.js';
+import { esc, fmtN, fmtDate, fmtLoad, fmtSets, fmtElapsed, weekLabel, weekChip, ICONS, repsTxt } from '../ui.js';
 import { mediaHTML } from '../media.js';
 import { targetReps } from './prefill.js';
 import { partnerStep, stepCount } from './steps.js';
 
 export function stepperHTML(S, field, value, ex, prefix = '') {
   const isLoad = field === 'load';
-  const label = isLoad ? (ex.loadType === 'bodyweight' ? 'Lest' : 'Charge') : (S.hold && S.curStep()?.kind === 'interval' ? 'Reps de thrusters' : 'Répétitions');
+  const repLabel = ex.repUnit === 'm' ? 'Distance (m)' : ex.repUnit === 's' ? 'Temps (s)' : 'Répétitions';
+  const label = isLoad ? (ex.loadType === 'bodyweight' ? 'Lest' : 'Charge') : (S.hold && S.curStep()?.kind === 'interval' ? 'Reps de thrusters' : repLabel);
   return `<div class="stepper">
     <div class="lbl">${label}</div>
     <button type="button" data-step="${field}:-1" aria-label="Diminuer">&minus;</button>
@@ -25,12 +26,21 @@ function targetHTML(S, st) {
   if (!t) return '<div class="target"><div class="lbl">Cible</div><div class="val muted">…</div></div>';
   const reps = targetReps(ex, t, st.set);
   const loadTxt = ex.unit === 'reps' ? '' : (t.load == null ? 'charge libre' : fmtLoad(ex, t.load));
-  const val = loadTxt ? `${loadTxt} × ${reps}` : `${reps} reps`;
+  const val = loadTxt ? `${loadTxt} × ${repsTxt(ex, reps)}` : repsTxt(ex, reps);
   const all = (t.reps || []).length > 1 ? ` · objectif ${t.reps.join(' / ')}` : '';
   return `<div class="target act-${esc(t.action)}">
     <div class="lbl">Pour progresser</div>
     <div class="val">${esc(val)}</div>
     <div class="reason">${esc(t.reason || '')}${esc(all)}</div>
+  </div>`;
+}
+
+function emomTargetHTML(S, st, ex) {
+  const load = S.targets[st.ex]?.load;
+  return `<div class="target">
+    <div class="lbl">Cible</div>
+    <div class="val">${esc(load != null ? `${fmtLoad(ex, load)} × ${st.block.repsPerMinute} reps` : `${st.block.repsPerMinute} reps`)}</div>
+    <div class="reason">${st.block.minutes || 10} minutes</div>
   </div>`;
 }
 
@@ -48,7 +58,7 @@ function doneSetsHTML(S, exId) {
   if (!sets.length) return '';
   return `<div class="done-sets">${sets.map((s) => `
     <button class="done-set" data-a="edit" data-ex="${esc(exId)}" data-set="${s.setIndex}" aria-label="Corriger la série ${s.setIndex + 1}">
-      ${ICONS.check}<span class="i">S${s.setIndex + 1}</span>${ex.unit === 'reps' ? `${s.reps} reps` : `${esc(fmtN(s.load))} × ${s.reps}`}
+      ${ICONS.check}<span class="i">S${s.setIndex + 1}</span>${ex.unit === 'reps' ? esc(repsTxt(ex, s.reps)) : `${esc(fmtN(s.load))} × ${s.reps}`}
     </button>`).join('')}</div>`;
 }
 
@@ -65,6 +75,16 @@ function partnerHTML(S, st) {
   return rows.join('');
 }
 
+// Défi de la semaine sur cet exercice : cible chiffrée, et référence à battre s'il y en a une.
+function challengeHTML(S, exId) {
+  const rows = (S.tests || []).filter(({ test }) => (test.exerciseIds || [test.exerciseId]).includes(exId));
+  return rows.map(({ test, ref }) => `<div class="challenge">
+      <div class="lbl">Défi de la semaine</div>
+      <div class="val">${esc(test.label)}</div>
+      ${ref ? `<div class="reason">${esc(ref)}</div>` : ''}
+    </div>`).join('');
+}
+
 function cardHTML(S, st) {
   const ex = S.exOf(st.ex);
   const total = stepCount(S.steps, st.ex);
@@ -73,7 +93,11 @@ function cardHTML(S, st) {
     const pos = st.block.exercises.indexOf(st.ex);
     tags.push(`<span class="chip">Superset ${pos + 1}/${st.block.exercises.length}</span>`);
   }
+  if (st.block.type === 'circuit') tags.push(`<span class="chip">Circuit ${st.block.exercises.indexOf(st.ex) + 1}/${st.block.exercises.length}</span>`);
   if (st.kind === 'interval') tags.push('<span class="chip">Intervalle</span>');
+  if (st.kind === 'emom') tags.push(`<span class="chip">EMOM ${st.block.repsPerMinute || ''} reps / minute</span>`);
+  const challenge = challengeHTML(S, st.ex);
+  if (challenge) tags.push('<span class="chip record">Défi</span>');
   if (ex.undulates) tags.push(`<span class="chip ${esc(S.log.weekType)}">${esc(weekChip(S.log.weekType))}</span>`);
 
   let body = '';
@@ -95,17 +119,26 @@ function cardHTML(S, st) {
     } else {
       body = `<div class="steppers">${stepperHTML(S, 'reps', S.input.reps, ex)}${stepperHTML(S, 'load', S.input.load, ex)}</div>`;
     }
+  } else if (st.kind === 'emom' && !S.log.emom?.[st.block.id]) {
+    body = `<div class="steppers">${stepperHTML(S, 'load', S.input.load, ex)}</div>
+      <div class="hold">
+        <div class="big tnum">${st.block.minutes || 10}</div><div class="sub">minutes, ${st.block.repsPerMinute || ''} reps au début de chaque minute</div>
+        <button class="btn btn-primary btn-lg btn-block" data-a="emom-start">Démarrer l'EMOM</button>
+      </div>`;
   } else {
     body = `<div class="steppers">${ex.unit === 'reps' ? '' : stepperHTML(S, 'load', S.input.load, ex)}${stepperHTML(S, 'reps', S.input.reps, ex)}</div>`;
   }
+  const unitWord = st.kind === 'emom' ? 'Minute' : st.block.type === 'circuit' ? 'Tour' : 'Série';
+  const note = st.kind === 'emom' ? `${st.block.repsPerMinute} reps au début de chaque minute, le reste de la minute sert de repos` : ex.note;
 
   return `<section class="card ex-card">
     ${mediaHTML(st.ex, { size: 'hero', alt: ex.name })}
     ${tags.length ? `<div class="ex-tag">${tags.join('')}</div>` : ''}
     <h1 class="ex-name">${esc(ex.name)}</h1>
-    <div class="ex-set">Série <b>${st.set + 1}</b>/${total}</div>
-    ${ex.note ? `<div class="ex-note">${esc(ex.note)}</div>` : ''}
-    ${targetHTML(S, st)}
+    <div class="ex-set">${unitWord} <b>${st.set + 1}</b>/${total}</div>
+    ${note ? `<div class="ex-note">${esc(note)}</div>` : ''}
+    ${challenge}
+    ${st.kind === 'emom' ? emomTargetHTML(S, st, ex) : targetHTML(S, st)}
     ${partnerHTML(S, st)}
     ${lastHTML(S, st)}
     ${body}
@@ -130,7 +163,7 @@ export function screenHTML(S) {
   const doneCount = S.steps.filter(S.isDone).length;
   const pct = S.steps.length ? Math.round((doneCount / S.steps.length) * 100) : 100;
   const blockTxt = st ? `Bloc ${st.blockIdx + 1}/${S.session.blocks.length}` : 'Terminé';
-  const showValidate = st && (st.kind === 'set' || S.hold?.phase === 'done');
+  const showValidate = st && (st.kind === 'set' || S.hold?.phase === 'done' || (st.kind === 'emom' && S.log.emom?.[st.block.id]));
   return `
     <header class="sess-head">
       <button class="btn icon-btn" data-a="home" aria-label="Retour à l'accueil">${ICONS.home}</button>

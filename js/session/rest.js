@@ -40,8 +40,7 @@ export async function offerRestChange(S) {
     ok: 'Appliquer', cancel: 'Non',
   });
   if (!ok) return;
-  block.rest = p.seconds;
-  await db.saveProgram(S.program);
+  await S.saveBlockRest(p.blockIdx, p.seconds);
   S.rebuild();
   S.ctx.toast('Repos du bloc mis à jour');
 }
@@ -77,6 +76,8 @@ export function stopRestUI(S, persist = true, keepBeep = false) {
 
 export function showRest(S, endsAt, totalMs) {
   const { log } = S;
+  // Rappel affiché pendant le repos des ancres (renfo moyen fessier)
+  const cue = S.session.blocks[log.restInfo?.blockIdx]?.cue;
   S.restEl?.remove();
   const C = 2 * Math.PI * 54;
   const el = document.createElement('div');
@@ -89,6 +90,7 @@ export function showRest(S, endsAt, totalMs) {
       <circle class="fg" cx="60" cy="60" r="54" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="0"/></svg>
       <div class="time" role="timer">${timer.fmtClock(Math.max(0, endsAt - Date.now()))}</div></div>
     ${extraOfferHTML(S)}
+    ${cue ? `<div class="rest-cue">${esc(cue)}</div>` : ''}
     <div class="rest-next">${nextPreviewHTML(S)}</div>
     <div class="rest-ctrl">
       <div class="rest-adj">

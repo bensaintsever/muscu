@@ -1,6 +1,8 @@
 // Point d'entrée : démarrage, routeur par hash, toast, navigation basse.
 import * as db from './db.js';
 import * as prog from './progression.js';
+import * as plan from './plan.js';
+import { today } from './clock.js';
 import { errorCard, closeAllModals } from './ui.js';
 import { renderHome } from './views/home.js';
 import { renderRecap } from './views/recap.js';
@@ -10,7 +12,7 @@ const appEl = document.getElementById('app');
 const navEl = document.getElementById('nav');
 const toastEl = document.getElementById('toast');
 
-const ctx = { db, prog, navigate, toast, refresh };
+const ctx = { db, prog, plan, today, navigate, toast, refresh };
 
 let cleanup = null;
 let routeToken = 0;

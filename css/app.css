@@ -177,6 +177,7 @@ body.in-session .nav { display: none; }
   border: 1px solid var(--line);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   font-weight: 600; font-size: 15px; text-align: center;
+  pointer-events: none;
 }
 body.in-session .toast { bottom: calc(108px + var(--sab)); }
 
@@ -449,3 +450,28 @@ textarea.note:focus { outline: none; border-color: var(--acc); }
 .rest-adj .btn { min-height: 56px; }
 .rest .skip { min-height: 64px; margin-top: 10px; }
 .rest .next-card.multi .next-row .n { font-size: 16px; line-height: 1.25; }
+
+/* Cycles : bloc en cours, défis, rappel de repos */
+.cycle-card { margin-top: 16px; }
+.cycle-card .kicker, .challenge-card .kicker { font-size: 13px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em; color: var(--acc); }
+.cycle-name { font-size: 22px; font-weight: 750; margin-top: 2px; }
+.cycle-intent { margin: 4px 0 0; color: var(--dim); font-size: 15px; }
+.cycle-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.challenge-card { margin-top: 12px; border-color: color-mix(in srgb, #ffd166 40%, var(--line)); }
+.challenge-card .kicker { color: #ffd166; }
+.ch-list { list-style: none; margin: 6px 0 0; padding: 0; }
+.ch-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.ch-item:first-child { border-top: 0; }
+.ch-label { font-weight: 650; font-size: 15px; line-height: 1.3; }
+.day-line { margin: 14px 0 0; padding: 10px 14px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); font-weight: 600; }
+.sess-card .hero-note { color: var(--tx); }
+.challenge {
+  margin-top: 10px; padding: 10px 14px; border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, #ffd166 45%, transparent);
+  background: color-mix(in srgb, #ffd166 9%, transparent);
+}
+.challenge .lbl { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #ffd166; }
+.challenge .val { font-weight: 700; margin-top: 2px; }
+.challenge .reason { font-size: 14px; color: var(--dim); margin-top: 2px; }
+.rest-cue { width: 100%; max-width: 480px; margin-top: 8px; padding: 10px 14px; border-radius: var(--radius); background: var(--card); border: 1px dashed var(--line); color: var(--dim); font-size: 15px; text-align: center; }
+.recap-challenges .chip { margin-left: auto; }

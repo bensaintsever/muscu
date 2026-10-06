@@ -220,7 +220,7 @@ test('pré-remplissage : série en plus au-delà de l\'historique → reprend la
 
 test('pré-remplissage : sans historique → cible de suggest', () => {
   assert.deepEqual(prefill('dc-incline-halteres', 0, { history: [] }), { load: 0, reps: 8 });
-  assert.deepEqual(prefill('traction-pronation', 2, { history: [] }), { load: 0, reps: 6 });
+  assert.deepEqual(prefill('traction-pronation', 2, { history: [] }), { load: 0, reps: 7 });
   const ex = PROGRAM.exercises['curl-cable'];
   const target = { load: 30, reps: [10, 11], action: 'hold', reason: '' };
   assert.deepEqual(plannedInput({ exId: 'curl-cable', ex, setIdx: 0, history: [], target }), { load: 30, reps: 10 });

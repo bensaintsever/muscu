@@ -1,4 +1,8 @@
-// Vue Réglages : type de semaine, son, programme, sauvegarde, stockage.
+// Vue Réglages : type de semaine, son, date du Hyrox, programme du bloc en cours, sauvegarde, stockage.
+import * as plans from './plan.js';
+import { todayISO } from './clock.js';
+import { hyroxSection } from './settings-cycles.js';
+import { semiDate } from './cycles.js';
 
 const DAY = 86400000;
 
@@ -25,10 +29,11 @@ export function parseNum(v) {
 export function validateProgram(program) {
   const errors = [];
   const posInt = (n) => Number.isInteger(n) && n > 0;
+  const restOk = (n) => Number.isInteger(n) && n >= 0;
   for (const s of program.sessions || []) {
-    if (!posInt(s.rest)) errors.push({ path: `session:${s.id}:rest`, msg: `${s.name} : repos en secondes entières > 0` });
+    if (!restOk(s.rest)) errors.push({ path: `session:${s.id}:rest`, msg: `${s.name} : repos en secondes entières` });
     for (const b of s.blocks || []) {
-      if (b.rest != null && !posInt(b.rest)) errors.push({ path: `block:${s.id}:${b.id}`, msg: `${s.name} : repos de bloc en secondes entières > 0, ou vide` });
+      if (b.rest != null && !restOk(b.rest)) errors.push({ path: `block:${s.id}:${b.id}`, msg: `${s.name} : repos de bloc en secondes entières, ou vide` });
     }
   }
   for (const ex of Object.values(program.exercises || {})) {
@@ -77,17 +82,24 @@ export async function renderSettings(container, ctx) {
   const view = el('div', { class: 'view s-view' }, el('h1', { class: 'h1', text: 'Réglages' }));
   container.append(view);
 
-  const [program, override, soundOn, lastExportAt] = await Promise.all([
-    ctx.db.getProgram(),
+  const [{ plan, day, program }, override, soundOn, lastExportAt, hyroxSetting] = await Promise.all([
+    plans.activeProgram(todayISO()),
     ctx.db.getSetting('weekTypeOverride', null),
     ctx.db.getSetting('soundOn', true),
     ctx.db.getSetting('lastExportAt', null),
+    ctx.db.getSetting('hyroxDate', null),
   ]);
+  // Info de semaine sans le forçage, pour l'afficher à côté
+  const raw = { ...plans.dayOf({ ...plan, override: null }, todayISO()) };
+  const semi = ctx.prog.weekInfo(todayISO());
+  const inSemi = raw.iso <= semiDate();
+  const info = { type: raw.weekType, week: inSemi ? semi.week : null, note: inSemi ? semi.note : (raw.week?.note || '') };
 
   view.append(
-    weekSection(ctx, override),
+    weekSection(ctx, override, info),
     soundSection(ctx, soundOn !== false),
-    programSection(ctx, program),
+    hyroxSection(ctx, plan, hyroxSetting),
+    programSection(ctx, plan, day, program),
     backupSection(ctx, lastExportAt),
     await storageSection(),
   );
@@ -95,8 +107,7 @@ export async function renderSettings(container, ctx) {
 
 /* Type de semaine */
 
-function weekSection(ctx, override) {
-  const info = ctx.prog.weekInfo(new Date());
+function weekSection(ctx, override, info) {
   const label = (t) => ctx.prog.WEEK_TYPES?.[t]?.label || t;
   const status = el('div', { class: 's-week-status' });
 
@@ -166,11 +177,12 @@ function numInput(value, { path, mode = 'numeric', label, step, placeholder }) {
   );
 }
 
-function programSection(ctx, program) {
+function programSection(ctx, plan, day, program) {
   const draft = structuredClone(program);
   const form = el('form', { class: 's-program', novalidate: true });
 
-  for (const s of draft.sessions || []) {
+  // Séances reprises d'un autre bloc (Atlas) : elles se règlent dans leur bloc d'origine
+  for (const s of (draft.sessions || []).filter((x) => !x.borrowed)) {
     const group = el('div', { class: 's-session' },
       el('div', { class: 's-session-head' },
         el('h3', { class: 's-session-name', text: s.name }),
@@ -265,7 +277,7 @@ function programSection(ctx, program) {
     }
     errorBox.replaceChildren();
     try {
-      await ctx.db.saveProgram(next);
+      await plans.saveEdits(plan, program.cycleId, next);
       program = next;
       ctx.toast('Programme enregistré');
       // Résumés des accordéons à jour
@@ -288,9 +300,9 @@ function programSection(ctx, program) {
   const reset = el('button', {
     type: 'button', class: 'btn btn-ghost s-full s-reset',
     onclick: async () => {
-      if (!confirm('Remettre le programme d\'origine ? Tes réglages de séries, reps, pas et repos seront perdus. L\'historique est conservé.')) return;
+      if (!confirm('Remettre le programme d\'origine ? Tes réglages de séries, reps, pas et repos seront perdus, dans tous les blocs. L\'historique est conservé.')) return;
       try {
-        await ctx.db.resetProgram();
+        await plans.resetAll();
         ctx.toast('Programme réinitialisé');
         ctx.refresh();
       } catch (err) {
@@ -301,7 +313,7 @@ function programSection(ctx, program) {
 
   return el('section', { class: 'card s-section' },
     el('h2', { class: 'h2', text: 'Programme' }),
-    el('p', { class: 'muted s-small', text: 'Touche un exercice pour le modifier, puis enregistre.' }),
+    el('p', { class: 'muted s-small', text: `Bloc en cours : ${day.block.name}. Touche un exercice pour le modifier, puis enregistre. Les repos et le format des ancres valent pour ce bloc ; nom, pas et note suivent l'exercice dans tous les blocs.` }),
     form,
     reset,
   );

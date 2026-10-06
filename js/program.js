@@ -18,7 +18,7 @@ export const PROGRAM = {
   version: 1,
   exercises: {
     // — Pec / Dos —
-    'traction-pronation': { id: 'traction-pronation', name: 'Traction pronation', sets: 3, repMin: 6, repMax: 10, increment: 2.5, loadType: 'bodyweight', undulates: false, unit: 'kg', note: 'Charge = lest éventuel (0 au poids du corps)' },
+    'traction-pronation': { id: 'traction-pronation', name: 'Traction pronation', sets: 3, repMin: 6, repMax: 10, increment: 2.5, loadType: 'bodyweight', undulates: false, unit: 'kg', note: 'Charge = lest éventuel (0 au poids du corps)', start: { load: 0, reps: 7 } },
     'dc-incline-halteres': { id: 'dc-incline-halteres', name: 'DC incliné haltères 15°', sets: 3, repMin: 8, repMax: 12, increment: 2, loadType: 'dumbbell', undulates: false, unit: 'kg' },
     'chest-row-incline': { id: 'chest-row-incline', name: 'Chest row banc incliné 45°', sets: 3, repMin: 10, repMax: 15, increment: 2, loadType: 'dumbbell', undulates: false, unit: 'kg' },
     'ecarte-banc': { id: 'ecarte-banc', name: 'Écarté couché haltères', sets: 3, repMin: 10, repMax: 15, increment: 2, loadType: 'dumbbell', undulates: false, unit: 'kg' },

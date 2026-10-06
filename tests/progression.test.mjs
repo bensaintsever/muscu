@@ -158,7 +158,8 @@ test('suggest : traction au poids du corps', () => {
   const first = suggest(ex('traction-pronation'), [], 'normale');
   assert.equal(first.action, 'first');
   assert.equal(first.load, 0);
-  assert.deepEqual(first.reps, [6, 6, 6]);
+  // Point de départ réel de Benjamin : 3 × 7-8 en pronation
+  assert.deepEqual(first.reps, [7, 7, 7]);
 
   const hold = suggest(ex('traction-pronation'), [entry('2026-10-07', 'normale', 0, [8, 7, 6])], 'normale');
   assert.equal(hold.action, 'hold');

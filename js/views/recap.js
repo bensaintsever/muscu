@@ -1,15 +1,20 @@
 // Vue Récap de fin de séance : durée, volume, comparaison, records, note libre.
 import * as db from '../db.js';
 import * as prog from '../progression.js';
-import { esc, fmtN, fmtDate, fmtDuration, fmtVolume, volumeOf, weekChip, errorCard } from '../ui.js';
+import * as plans from '../plan.js';
+import { testsForLog } from '../cycles.js';
+import { esc, fmtN, fmtDate, fmtDuration, fmtVolume, volumeOf, weekChip, errorCard, repsTxt } from '../ui.js';
 
 export async function renderRecap(root, { live, ctx, setCleanup }, logId) {
   const log = logId ? await db.getLog(logId) : null;
   if (!live()) return;
   if (!log) { root.className = 'view'; root.innerHTML = errorCard('Séance introuvable'); return; }
   if (log.status !== 'done') { ctx.navigate('#/session'); return; }
-  const program = await db.getProgram();
-  const session = program.sessions.find((s) => s.id === log.sessionId);
+  const { plan, program, session } = await plans.sessionForLog(log);
+  const allLogs = await db.listLogs();
+  const exIds = [...new Set([...(session?.blocks || []).flatMap((b) => b.exercises), ...(log.sets || []).map((s) => s.exerciseId)])];
+  const challenges = await Promise.all(testsForLog(plan.resolved, log, exIds)
+    .map(async (test) => ({ test, result: await plans.evaluateForLog(test, log, allLogs) })));
   const recent = await db.listLogs({ sessionId: log.sessionId, limit: 50 });
   const idx = recent.findIndex((l) => l.id === log.id);
   const prev = idx >= 0 ? recent[idx + 1] : recent.find((l) => l.id !== log.id);
@@ -28,7 +33,9 @@ export async function renderRecap(root, { live, ctx, setCleanup }, logId) {
     try { hist = (await db.getExerciseHistory(id)).filter((h) => h.logId !== log.id && h.date <= log.date); } catch { /* rien */ }
     const before = hist.flatMap((h) => h.sets || []);
     let badge = '';
+    const timed = ex.repUnit === 'm' || ex.repUnit === 's';
     if (!before.length) badge = '<span class="chip">Première</span>';
+    else if (timed) badge = '';
     else {
       const best = Math.max(...mine.map(score));
       if (best > 0) {
@@ -40,9 +47,10 @@ export async function renderRecap(root, { live, ctx, setCleanup }, logId) {
       }
     }
     const txt = mine.map((s) => (ex.unit === 'reps' ? `${s.reps}` : `${fmtN(s.load)} × ${s.reps}`)).join(' · ');
+    const unit = ex.unit === 'reps' ? ` ${repsTxt(ex, '').trim()}` : (timed ? ` (${repsTxt(ex, '').trim()})` : '');
     return `<li class="list-item recap-ex">
       <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:6px"><b class="wrap">${esc(ex.name)}</b>${badge}</div>
-      <div class="sets">${esc(txt)}${ex.unit === 'reps' ? ' reps' : ''}</div>
+      <div class="sets">${esc(txt)}${esc(unit)}</div>
     </li>`;
   }));
   if (!live()) return;
@@ -70,6 +78,10 @@ export async function renderRecap(root, { live, ctx, setCleanup }, logId) {
       <div class="stat"><div class="k">Volume</div><div class="v">${fmtVolume(vol)}</div></div>
       <div class="stat wide"><div class="k">Par rapport à la précédente</div><div class="v" style="font-size:22px">${cmp}</div></div>
     </div>
+    ${challenges.length ? `<div class="section-title">Défi</div><ul class="list recap-challenges">${challenges.map(({ test, result }) => {
+      const [cls, label] = result.status === 'success' ? ['ok', 'Réussi'] : result.status === 'reference' ? ['ok', 'Référence posée'] : ['warn', 'Pas encore'];
+      return `<li class="list-item"><div class="grow"><b class="wrap">${esc(test.label)}</b>${result.detail ? `<div class="muted small">${esc(result.detail)}</div>` : ''}</div><span class="chip ${cls}">${label}</span></li>`;
+    }).join('')}</ul>` : ''}
     <div class="section-title">Exercices · ${sets.length} séries</div>
     ${rows.length ? `<ul class="list">${rows.join('')}</ul>` : '<p class="muted">Aucune série.</p>'}
     <div class="section-title">Note</div>

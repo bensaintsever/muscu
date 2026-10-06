@@ -226,6 +226,7 @@ function weekChip(ctx, type) {
 
 function sessionNames(program) {
   const m = {};
+  Object.assign(m, program?.sessionNames || {});
   for (const s of program?.sessions || []) m[s.id] = s.name;
   return m;
 }
@@ -248,7 +249,7 @@ function backLink(ctx, hash, label) {
 /* ---------- Historique ---------- */
 
 export async function renderHistory(container, ctx, logId) {
-  const program = await ctx.db.getProgram();
+  const program = await ctx.plan.catalogProgram();
   if (logId) return renderLogDetail(container, ctx, program, logId);
 
   const logs = (await ctx.db.listLogs()).filter((l) => l.status === 'done');
@@ -257,7 +258,7 @@ export async function renderHistory(container, ctx, logId) {
 
   const view = el('div', { class: 'view h-view' }, el('h1', { class: 'h1', text: 'Historique' }));
 
-  const today = isoDate(new Date());
+  const today = isoDate(ctx.today());
   const thisMonday = mondayOf(today);
   const monthPrefix = today.slice(0, 7);
   const real = logs.filter((l) => !l.isReference);
@@ -396,7 +397,7 @@ async function renderLogDetail(container, ctx, program, logId) {
 /* ---------- Progression ---------- */
 
 export async function renderProgress(container, ctx, exerciseId) {
-  const program = await ctx.db.getProgram();
+  const program = await ctx.plan.catalogProgram();
   if (exerciseId) return renderExercise(container, ctx, program, exerciseId);
 
   const view = el('div', { class: 'view h-view' }, el('h1', { class: 'h1', text: 'Progression' }));
@@ -409,6 +410,8 @@ export async function renderProgress(container, ctx, exerciseId) {
   const allIds = groups.flatMap((g) => g.ids);
   const histories = await Promise.all(allIds.map((id) => ctx.db.getExerciseHistory(id).catch(() => [])));
   const histMap = Object.fromEntries(allIds.map((id, i) => [id, histories[i] || []]));
+  // « Autres » : seulement les exercices hors bloc en cours qui ont un historique
+  for (const g of groups) if (g.name === 'Autres') g.ids = g.ids.filter((id) => histMap[id].length);
 
   for (const g of groups) {
     if (!g.ids.length) continue;
@@ -469,7 +472,7 @@ async function renderExercise(container, ctx, program, exerciseId) {
 
   // Prochaine cible
   const override = await ctx.db.getSetting('weekTypeOverride', null);
-  const weekType = override || safeWeekInfo(ctx, new Date())?.type || 'normale';
+  const weekType = override || safeWeekInfo(ctx, ctx.today())?.type || 'normale';
   let sug = null;
   try { sug = ctx.prog.suggest(ex, history, weekType); } catch { sug = null; }
   if (sug) {

@@ -107,22 +107,35 @@ function fill(count, value) {
   return Array.from({ length: count }, () => value);
 }
 
-// Entrée de référence pour la progression.
-// Les exos qui ondulent ne progressent que sur les séances à pleine charge
-// (lourde, normale ou référence). Les autres progressent sur toute séance,
-// quel que soit le type de semaine enregistré dans le log.
-function findBase(exercise, history) {
+// Une séance compte comme base de progression si elle a été faite à pleine charge :
+// ni facteur global réduit (reprise, rappel), ni, pour un exo qui ondule, semaine moyenne/légère ou rampe.
+export function isFullLoad(exercise, h) {
+  if (h.loadFactor < 1) return false;
+  if (!exercise.undulates) return true;
+  if (h.legFactor < 1) return false;
+  return !!h.isReference || FULL_LOAD_TYPES.has(h.weekType);
+}
+
+// Entrée de référence pour la progression : la plus récente à pleine charge, sinon la plus récente.
+export function findBase(exercise, history) {
   if (!history?.length) return null;
-  if (!exercise.undulates) return history[history.length - 1];
-  for (let i = history.length - 1; i >= 0; i--) {
-    const h = history[i];
-    if (h.isReference || FULL_LOAD_TYPES.has(h.weekType)) return h;
-  }
-  // Aucune séance à pleine charge : on se rabat sur la plus récente.
+  for (let i = history.length - 1; i >= 0; i--) if (isFullLoad(exercise, history[i])) return history[i];
   return history[history.length - 1];
 }
 
-export function suggest(exercise, history, weekType) {
+// Facteur de charge du jour : semaine moyenne/légère ou rampe (exos qui ondulent), puis facteur global.
+// opts = { legFactor, loadFactor } (valeurs < 1, sinon ignorées).
+export function loadFactorFor(exercise, weekType, opts = {}) {
+  let f = 1;
+  if (exercise.undulates) {
+    if (weekType === 'moyenne' || weekType === 'legere') f = WEEK_TYPES[weekType].factor;
+    else if (opts.legFactor < 1) f = opts.legFactor;
+  }
+  if (opts.loadFactor < 1) f *= opts.loadFactor;
+  return f;
+}
+
+export function suggest(exercise, history, weekType, opts = {}) {
   const { sets: count, repMin, repMax } = exercise;
   const increment = Number(exercise.increment) || 0;
   const repsOnly = exercise.unit === 'reps';
@@ -130,7 +143,26 @@ export function suggest(exercise, history, weekType) {
 
   const base = findBase(exercise, (history || []).filter((h) => h?.sets?.length));
 
+  // Chrono (secondes) ou distance sans charge (course) : pas de double progression
+  if (exercise.repUnit === 's' || (exercise.repUnit === 'm' && repsOnly)) {
+    const timed = exercise.repUnit === 's';
+    return {
+      load: 0,
+      reps: fill(count, timed && base ? Number(base.sets[0]?.reps) || repMin : repMin),
+      action: base ? 'hold' : 'first',
+      reason: timed ? 'Chrono : saisis ton temps en secondes' : `Distance : ${repMin} m`,
+    };
+  }
+
   if (!base) {
+    const start = exercise.start?.load;
+    const startReps = exercise.start?.reps;
+    if (startReps != null) {
+      return { load: start ?? 0, reps: fill(count, startReps), action: 'first', reason: `Point de départ : ${startReps} reps${start ? ` à ${fmtKg(start)}` : ''}` };
+    }
+    if (start != null && !repsOnly) {
+      return { load: start, reps: fill(count, repMin), action: 'first', reason: `Charge de départ du bloc : ${fmtKg(start)}` };
+    }
     return {
       load: repsOnly || bodyweight ? 0 : null,
       reps: fill(count, repMin),
@@ -146,13 +178,17 @@ export function suggest(exercise, history, weekType) {
   const repsAt = (i, fallback) => (i < baseReps.length ? baseReps[i] : fallback);
 
   const type = WEEK_TYPES[weekType] ? weekType : 'normale';
-  if (exercise.undulates && (type === 'moyenne' || type === 'legere')) {
-    const factor = WEEK_TYPES[type].factor;
+  const factor = loadFactorFor(exercise, type, opts);
+  if (factor < 1) {
+    const light = exercise.undulates && (type === 'moyenne' || type === 'legere');
+    const pct = Math.round(factor * 100);
     return {
       load: repsOnly ? 0 : roundLoad(baseLoad * factor, increment),
       reps: Array.from({ length: count }, (_, i) => repsAt(i, repMin)),
       action: 'undulate',
-      reason: `Semaine ${WEEK_TYPES[type].label.toLowerCase()} : ${Math.round(factor * 100)} % de la charge de base`,
+      reason: opts.loadFactor < 1 ? `Reprise : ${pct} % de la charge de base`
+        : light ? `Semaine ${WEEK_TYPES[type].label.toLowerCase()} : ${pct} % de la charge de base`
+          : `Rampe jambes : ${pct} % de la charge de base`,
     };
   }
 

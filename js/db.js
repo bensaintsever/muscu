@@ -1,5 +1,6 @@
 // Stockage IndexedDB : base `muscu`, stores `logs` et `kv`.
 import { PROGRAM, REFERENCE_LOGS, MIGRATIONS } from './program.js';
+import { todayISO } from './clock.js';
 
 const DB_NAME = 'muscu';
 const DB_VERSION = 1;
@@ -140,16 +141,18 @@ export async function resetProgram() {
 
 // — Séances —
 
-export async function startLog(sessionId, weekType) {
+// extra : contexte du cycle figé au démarrage (cycleId, blockId, legFactor, adjust).
+export async function startLog(sessionId, weekType, extra = {}) {
   const now = Date.now();
   const log = {
     id: newId(),
     sessionId,
-    date: localDate(new Date(now)),
+    date: todayISO(),
     startedAt: now,
     endedAt: null,
     status: 'in-progress',
     weekType,
+    ...extra,
     sets: [],
   };
   await saveLog(log);
@@ -216,13 +219,16 @@ export async function getExerciseHistory(exerciseId) {
       .sort((a, b) => a.setIndex - b.setIndex)
       .map((s) => ({ load: s.load, reps: s.reps }));
     if (!sets.length) continue;
-    history.push({
+    const entry = {
       logId: log.id,
       date: log.date,
       weekType: log.weekType,
       isReference: !!log.isReference,
       sets,
-    });
+    };
+    if (log.legFactor < 1) entry.legFactor = log.legFactor;
+    if (log.adjust?.loadFactor < 1) entry.loadFactor = log.adjust.loadFactor;
+    history.push(entry);
   }
   return history;
 }

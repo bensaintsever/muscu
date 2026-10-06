@@ -2,8 +2,11 @@
 // La logique pure est dans steps.js et prefill.js, le HTML dans cards.js, le repos dans rest.js.
 import * as db from '../db.js';
 import * as prog from '../progression.js';
+import * as plans from '../plan.js';
+import { testsForLog } from '../cycles.js';
+import { detectRecord, recordExcluded } from '../records.js';
 import * as timer from '../timer.js';
-import { fmtLoad, fmtElapsed, closeAllModals, confirmDialog } from '../ui.js';
+import { fmtLoad, fmtElapsed, closeAllModals, confirmDialog, repsTxt } from '../ui.js';
 import { buildSteps, isStepDone, setsOf, firstUndone, stepAfterSkip, isLastSetOf } from './steps.js';
 import { plannedInput } from './prefill.js';
 import { screenHTML } from './cards.js';
@@ -15,17 +18,21 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
   const log = await db.getActiveLog();
   if (!live()) return;
   if (!log) { toast('Aucune séance en cours'); navigate('#/'); return; }
-  const [program, soundOn] = await Promise.all([db.getProgram(), db.getSetting('soundOn', true)]);
+  const [{ plan, program, session }, soundOn] = await Promise.all([plans.sessionForLog(log), db.getSetting('soundOn', true)]);
   if (!live()) return;
-  const session = program.sessions.find((s) => s.id === log.sessionId);
   if (!session) throw new Error(`Séance « ${log.sessionId} » introuvable dans le programme`);
   log.sets = log.sets || [];
+  // Facteurs du jour figés au démarrage : rampe jambes, reprise à 90 %, etc.
+  const factors = { legFactor: log.legFactor, loadFactor: log.adjust?.loadFactor };
+  const exIds = [...new Set(session.blocks.flatMap((b) => b.exercises))];
+  let tests = [];
+  try { tests = await Promise.all(testsForLog(plan.resolved, log, exIds).map(async (t) => ({ test: t, ref: await plans.refText(t) }))); } catch (e) { console.error(e); }
 
   // État partagé avec cards.js, dialogs.js et rest.js
   const S = {
     root, live, ctx, log, program, session, soundOn,
     steps: [], cur: null, input: null, hold: null,
-    targets: {}, histories: {}, busy: false, restEl: null, offerExtra: null,
+    targets: {}, histories: {}, busy: false, restEl: null, offerExtra: null, tests,
   };
   const exOf = (id) => program.exercises[id];
   S.exOf = exOf;
@@ -41,7 +48,7 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
     let hist = [];
     try { hist = await db.getExerciseHistory(exId); } catch (e) { console.error(e); }
     let t;
-    try { t = prog.suggest(ex, hist, log.weekType); } catch (e) {
+    try { t = prog.suggest(ex, hist, log.weekType, factors); } catch (e) {
       console.error(e);
       t = { load: null, reps: [], action: 'first', reason: 'Suggestion indisponible' };
     }
@@ -52,13 +59,13 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
 
   S.plannedInput = (exId, setIdx) => plannedInput({
     exId, ex: exOf(exId), setIdx,
-    history: S.histories[exId], target: S.targets[exId], sets: log.sets, weekType: log.weekType,
+    history: S.histories[exId], target: S.targets[exId], sets: log.sets, weekType: log.weekType, factors,
   });
 
   S.planLabel = (exId, setIdx) => {
     const ex = exOf(exId);
     const p = S.plannedInput(exId, setIdx);
-    return ex.unit === 'reps' ? `${p.reps} reps` : `${fmtLoad(ex, p.load)} × ${p.reps}`;
+    return ex.unit === 'reps' ? repsTxt(ex, p.reps) : `${fmtLoad(ex, p.load)} × ${repsTxt(ex, p.reps)}`;
   };
 
   // ----- Rendu -----
@@ -76,7 +83,10 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
       if (st.block.type === 'superset') {
         await Promise.all(st.block.exercises.filter((id) => exOf(id)).map((id) => S.ensureTarget(id).catch(() => {})));
       }
-      if (!S.input) S.input = S.plannedInput(st.ex, st.set);
+      if (!S.input) {
+        S.input = S.plannedInput(st.ex, st.set);
+        if (st.kind === 'emom' && st.block.repsPerMinute) S.input.reps = st.block.repsPerMinute;
+      }
     }
     S.draw();
   };
@@ -100,9 +110,11 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
     S.busy = true;
     try {
       log.sets = log.sets.filter((s) => !(s.exerciseId === st.ex && s.setIndex === st.set));
+      const earlier = log.sets.filter((s) => s.exerciseId === st.ex);
       log.sets.push({ exerciseId: st.ex, setIndex: st.set, load, reps, ts: Date.now() });
       await db.saveLog(log);
-      timer.vibrate(40);
+      const record = recordExcluded(ex, log) ? null : detectRecord(ex, { load, reps }, S.histories[st.ex], earlier);
+      if (record) { timer.vibrate([60, 40, 60, 40, 160]); toast(record.text, 3500); } else timer.vibrate(40);
       await offerRestChange(S);
       // Les étapes ont pu être reconstruites (repos du bloc modifié) : on reprend la version à jour
       const done = S.steps.find((s) => s.key === st.key) || st;
@@ -116,7 +128,8 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
       }
       S.moveTo(next);
       S.ensureTarget(next.ex).catch(() => {});
-      if (done.rest > 0) await beginRest(S, done.rest, done.blockIdx);
+      const rest = done.kind === 'emom' ? emomRest(done) : done.rest;
+      if (rest > 0) await beginRest(S, rest, done.blockIdx);
       await S.go();
     } catch (e) {
       console.error(e);
@@ -185,6 +198,30 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
     await S.go();
   }
 
+  // ----- EMOM : la minute démarre au premier appui, le repos va jusqu'à la minute suivante -----
+
+  function emomRest(st) {
+    const start = log.emom?.[st.block.id];
+    if (!start) return 0;
+    return Math.max(0, Math.ceil((start + (st.set + 1) * 60000 - Date.now()) / 1000));
+  }
+
+  async function startEmom() {
+    const st = S.curStep();
+    if (!st) return;
+    timer.unlockAudio();
+    timer.vibrate(200);
+    log.emom = { ...(log.emom || {}), [st.block.id]: Date.now() - st.set * 60000 };
+    await db.saveLog(log);
+    S.draw();
+  }
+
+  S.saveBlockRest = (blockIdx, seconds) => {
+    const block = session.blocks[blockIdx];
+    if (block) block.rest = seconds;
+    return plans.saveBlockRest(log, session.id, block?.id, seconds);
+  };
+
   // ----- Maintien (wall ball) -----
 
   function stopHold() {
@@ -227,6 +264,7 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
     else if (a === 'addset') { const st = S.curStep(); if (st) { await S.addSet(st.ex); await S.go(); } }
     else if (a === 'edit') openEdit(S, b.dataset.ex, Number(b.dataset.set));
     else if (a === 'hold-start') startHold();
+    else if (a === 'emom-start') startEmom();
     else if (a === 'hold-stop' || a === 'hold-skip') { stopHold(); S.hold = { phase: 'done' }; S.draw(); }
   });
   wireSteppers(root, () => S.input, () => { const st = S.curStep(); return st ? exOf(st.ex) : null; });

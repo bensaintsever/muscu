@@ -23,6 +23,14 @@ Une app installable sur Pixel 8 Pro (Chrome Android) qui :
 |---|---|---|
 | `PLAN.md` | ce document, contrats | orchestrateur |
 | `js/program.js` | programme initial + séance de référence | orchestrateur |
+| `CYCLES.md` | cycles d'entraînement validés (fait foi) | orchestrateur |
+| `js/cycles-data.js` | données des cycles : blocs, séances, exercices nouveaux, remplacements, défis | orchestrateur |
+| `js/cycles.js` | pur : dates des blocs (`resolveCycles`), séance du jour (`dayPlan`), défis, comptes à rebours | orchestrateur |
+| `js/layers.js` | pur : programme actif d'un bloc par couches (`buildProgram`), rangement des réglages (`splitEdits`), ajustements (`applyAdjust`) | orchestrateur |
+| `js/plan.js` | lien cycles ↔ base : programme du jour, séance d'un log, verdicts des défis, enregistrement des réglages | orchestrateur |
+| `js/records.js` | pur : records annoncés à la validation d'une série | orchestrateur |
+| `js/clock.js` | date du jour centralisée (`today()`, `todayISO()`), simulation par `?today=` | orchestrateur |
+| `tests/cycles.test.mjs` | tests Node des cycles, des couches, de la migration, des records | orchestrateur |
 | `js/db.js` | stockage IndexedDB | agent **Data** |
 | `js/progression.js` | calendrier d'ondulation, suggestions de charge (fonctions pures) | agent **Data** |
 | `tests/progression.test.mjs` | tests Node de `progression.js` | agent **Data** |
@@ -31,7 +39,8 @@ Une app installable sur Pixel 8 Pro (Chrome Android) qui :
 | `js/app.js` | point d'entrée : démarrage, routeur par hash, `ctx`, toast, nav | agent **Séance** |
 | `js/ui.js` | helpers partagés : `esc`, formats (`fmt*`), `ICONS`, modales (`openModal`, `confirmDialog`), `errorCard` | agent **Séance** |
 | `js/views/home.js` | vue Accueil, démarrage d'une séance | agent **Séance** |
-| `js/views/recap.js` | récap de fin de séance | agent **Séance** |
+| `js/views/recap.js` | récap de fin de séance, verdict du défi | agent **Séance** |
+| `js/views/cycle-card.js` | accueil : carte du bloc (comptes à rebours), carte des défis de la semaine | agent **Séance** |
 | `js/session/view.js` | vue Séance en cours : état, validation, navigation entre séries, maintien wall ball | agent **Séance** |
 | `js/session/steps.js` | logique pure de la séance : `buildSteps`, reprise, dernière série d'un exo, groupe affiché au repos | agent **Séance** |
 | `js/session/prefill.js` | logique pure du pré-remplissage (séance précédente série par série, ondulation, charge modifiée) | agent **Séance** |
@@ -42,7 +51,8 @@ Une app installable sur Pixel 8 Pro (Chrome Android) qui :
 | `js/timer.js` | minuteur de repos, wake lock, vibration, son | agent **Séance** |
 | `js/media.js` | illustrations des exercices | agent **Séance** |
 | `js/history.js` | vues Historique (liste des séances, détail) et Progression (graphe par exo) | agent **Suivi** |
-| `js/settings.js` | vue Réglages : édition du programme, type de semaine forcé, export/import | agent **Suivi** |
+| `js/settings.js` | vue Réglages : édition du programme du bloc en cours, type de semaine forcé, export/import | agent **Suivi** |
+| `js/settings-cycles.js` | Réglages : date du Hyrox (provisoire par défaut) | agent **Suivi** |
 | `manifest.webmanifest`, `sw.js`, `icons/` | installabilité, hors ligne | agent **Suivi** |
 
 Chaque agent n'écrit **que** ses fichiers. Les interfaces ci-dessous sont le contrat.
@@ -113,7 +123,9 @@ Chaque agent n'écrit **que** ses fichiers. Les interfaces ci-dessous sont le co
 - `exportAll()` → `{ app: 'muscu', schema: 1, exportedAt, program, logs, settings }`
 - `importAll(data)` : remplace tout après validation minimale ; lève une erreur lisible sinon.
 
-Réglages connus : `weekTypeOverride` (null ou un type), `soundOn` (bool, défaut true).
+Réglages connus : `weekTypeOverride` (null ou un type), `soundOn` (bool, défaut true), `hyroxDate` (null = date provisoire), `cycleEdits` (retouches faites pendant un bloc, voir Cycles).
+
+`startLog(sessionId, weekType, extra)` : `extra` fige dans le log le contexte du cycle (`cycleId` = bloc dont vient la définition de la séance, `blockId`, `legFactor` pour la rampe, `adjust` pour les ajustements du jour). `getExerciseHistory` remonte `legFactor` et `loadFactor` (= `adjust.loadFactor`) quand ils sont < 1.
 
 ## Contrat `js/progression.js` (pur, sans DOM ni IndexedDB, export nommé)
 
@@ -145,6 +157,22 @@ Réglages connus : `weekTypeOverride` (null ou un type), `soundOn` (bool, défau
 6. **Réglages** : édition du programme (séries, fourchette, pas, repos, ondulation), forcer le type de semaine, son on/off, export JSON (téléchargement), import JSON, réinitialisation.
 
 Navigation basse : Accueil · Historique · Progression · Réglages (masquée pendant la séance).
+
+## Cycles d'entraînement (depuis le 06/10/2026)
+
+Contenu : `CYCLES.md` (fait foi). Code : `js/cycles-data.js` + `js/cycles.js` + `js/layers.js` + `js/plan.js`.
+
+- **Le programme actif dépend de la date.** `resolveCycles(CYCLES, { hyroxDate })` calcule les dates de tous les blocs ; Moteur et Duo sont calés à rebours sur la date du Hyrox (réglage `hyroxDate`, provisoire 13/02/2027). `dayPlan(resolved, date)` donne le bloc, la semaine, la séance prévue (remplacement ponctuel `schedule` d'abord, sinon jour par défaut des séances du bloc), le type de semaine jambes et les ajustements du jour.
+- **Avant le 12/10**, le bloc actif est « Programme actuel » (`base: true`) : le programme enregistré, tel quel. Jusqu'au 22/11, la séance jambes est celle du programme enregistré (`fromBase`) et le type de semaine vient de `weekInfo()` (ondulation inchangée). Après le semi : `weeks[].legs` et `weeks[].factor` (rampe du bloc Fondations).
+- **Ids stables.** Les séances équivalentes gardent `pec-dos`, `epaule-bras`, `jambes` ; les ancres gardent leur id d'exercice (historique, graphes, pré-remplissage continus). Les nouveaux exercices ont un id fixe dans `EXERCISES`.
+- **Réglages par couches** (`layers.js`), du plus faible au plus fort : catalogue (`program.js` + `EXERCISES`) → programme enregistré (`kv 'program'`, réglages globaux : nom, pas, note, séries… d'un exercice, valables dans tous les blocs) → format du bloc (`overrides`, ex. traction 4 × 6-8 au bloc 1) → retouches faites pendant ce bloc (`kv 'cycleEdits'[blocId]`). Repos d'un bloc de séance : retouche du bloc > repos prescrit par le cycle > repos réglé à la main sur le même groupe d'exercices dans le programme enregistré > repos de la séance. À l'enregistrement, `splitEdits` range chaque champ modifié : champ fixé par le format du bloc ou repos → retouches du bloc ; sinon → programme enregistré. Avant le 12/10 et pour la séance jambes reprise, tout va dans le programme enregistré, comme avant.
+- **Pas de migration de données** : le programme enregistré et les logs existants sont lus tels quels (aucun champ ne change de sens). Un log sans `cycleId` (fait avant la mise à jour) est rattaché au bloc de sa date, donc au « Programme actuel ». Les tests de `tests/cycles.test.mjs` vérifient qu'un programme modifié à la main reste appliqué et n'est jamais réécrit par la lecture.
+- **Types de bloc de séance** en plus de single / superset / interval : `circuit` (exos enchaînés, `restBetween` entre deux exos, `rest` en fin de tour) et `emom` (une étape par minute ; le repos court jusqu'à la minute suivante, l'EMOM démarre par un bouton).
+- **Motivation** : carte du bloc sur l'accueil (nom, intention, semaine n/N, défi et course à venir), carte défi pendant la semaine défi (cible sur l'exercice, verdict dans le récap et sur l'accueil), records annoncés à la validation (`records.js`, hors semaines allégées des exos qui ondulent, hors rampe et reprise).
+
+### Simuler une date (tests au navigateur)
+
+Ajouter `?today=AAAA-MM-JJ` avant le `#` : `http://localhost:8771/?today=2026-10-12#/`. Seule `today()` de `js/clock.js` le lit : accueil, Réglages, Historique et date des séances démarrées suivent la date simulée ; l'heure reste réelle. Sans paramètre, rien ne change. Les séances créées en simulation sont de vraies données : utiliser une base de test et la supprimer ensuite.
 
 ## Étapes
 

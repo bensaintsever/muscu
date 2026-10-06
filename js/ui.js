@@ -41,11 +41,19 @@ export function fmtLoad(ex, load) {
   return `${fmtN(load)} kg`;
 }
 
+// Unité des « reps » : répétitions, mètres (carry, course) ou secondes (chrono).
+export const repUnitWord = (ex) => (ex?.repUnit === 'm' ? 'm' : ex?.repUnit === 's' ? 's' : 'reps');
+export const repsTxt = (ex, n) => `${n} ${repUnitWord(ex)}`;
+
 // « 26 kg · 10 / 10 / 8 », ou détail série par série si les charges varient.
 export function fmtSets(ex, sets) {
   if (!sets?.length) return '';
   const reps = sets.map((s) => s.reps).join(' / ');
-  if (ex.unit === 'reps') return `${reps} reps`;
+  if (ex.unit === 'reps') return `${reps} ${repUnitWord(ex)}`;
+  if (ex.repUnit === 'm' || ex.repUnit === 's') {
+    const loads = [...new Set(sets.map((s) => s.load))];
+    if (loads.length === 1) return `${fmtLoad(ex, loads[0])} · ${reps} ${repUnitWord(ex)}`;
+  }
   const loads = [...new Set(sets.map((s) => s.load))];
   if (loads.length === 1) return `${fmtLoad(ex, loads[0])} · ${reps}`;
   return sets.map((s) => `${fmtN(s.load)} × ${s.reps}`).join(' / ');

@@ -12,7 +12,7 @@ export function wireSteppers(el, getState, getEx) {
     const state = getState();
     const ex = getEx();
     if (!state || !ex) return;
-    const step = field === 'load' ? (ex.increment > 0 ? ex.increment : 1) : 1;
+    const step = field === 'load' ? (ex.increment > 0 ? ex.increment : 1) : (ex.repStep || 1);
     state[field] = Math.max(0, round2((Number(state[field]) || 0) + Number(dir) * step));
     const input = b.parentElement.querySelector('input');
     if (input) input.value = fmtN(state[field]);
@@ -82,7 +82,7 @@ export function openOverview(S) {
     const done = steps.every(S.isDone);
     const current = st && st.blockIdx === bi;
     const cls = current ? 'current' : done ? 'done' : '';
-    const label = block.type === 'superset' ? 'Superset' : block.type === 'interval' ? 'Intervalle' : 'Exercice';
+    const label = { superset: 'Superset', interval: 'Intervalle', circuit: 'Circuit', emom: 'EMOM' }[block.type] || 'Exercice';
     const rows = block.exercises.filter((id) => S.exOf(id)).map((id) => {
       const planned = S.steps.filter((s) => s.ex === id).length;
       const made = S.setsOf(id).length;
