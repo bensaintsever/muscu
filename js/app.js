@@ -107,7 +107,32 @@ async function boot() {
     appEl.innerHTML = `<div class="view">${errorCard("Impossible d'ouvrir la base de données", e)}</div>`;
     return;
   }
+  // Retour du lien de confirmation d'e-mail : les jetons sont dans le hash, on les retire avant de router
+  let authHash = null;
+  if (/(^|[#&/])(access_token|error_description)=/.test(location.hash)) {
+    authHash = location.hash;
+    history.replaceState(null, '', `${location.pathname}${location.search}#/settings`);
+  }
   window.addEventListener('hashchange', route);
+  route();
+  startCloud(authHash);
+}
+
+// Sauvegarde en ligne : chargée à part, son échec ne doit jamais empêcher l'app de tourner.
+async function startCloud(authHash) {
+  try {
+    const sync = await import('./sync-run.js');
+    await sync.startSync({ toast, authHash, refresh: refreshAfterPull });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// Données reçues du cloud : on redessine l'écran, sauf en séance ou pendant une saisie.
+function refreshAfterPull() {
+  if (location.hash.startsWith('#/session')) return;
+  const el = document.activeElement;
+  if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
   route();
 }
 

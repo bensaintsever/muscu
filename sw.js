@@ -1,5 +1,5 @@
 // Service worker : réseau d'abord (mises à jour rapides), cache en repli (hors ligne en salle).
-const VERSION = '2026-10-06-5';
+const VERSION = '2026-10-06-6';
 const CACHE = `muscu-${VERSION}`;
 const NETWORK_TIMEOUT = 4000;
 
@@ -33,6 +33,13 @@ const ASSETS = [
   'js/plan.js',
   'js/records.js',
   'js/settings-cycles.js',
+  'js/settings-cloud.js',
+  'js/backup.js',
+  'js/cloud.js',
+  'js/cloud-config.js',
+  'js/sync.js',
+  'js/sync-store.js',
+  'js/sync-run.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -149,6 +156,7 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+  // Hors GET et autres origines (dont *.supabase.co) : non interceptés, jamais mis en cache
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;

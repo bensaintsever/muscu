@@ -95,11 +95,16 @@ export async function renderSettings(container, ctx) {
   const inSemi = raw.iso <= semiDate();
   const info = { type: raw.weekType, week: inSemi ? semi.week : null, note: inSemi ? semi.note : (raw.week?.note || '') };
 
+  // Sauvegarde en ligne chargée à part : si elle échoue, le reste des Réglages s'affiche quand même
+  let cloud = null;
+  try { cloud = await (await import('./settings-cloud.js')).cloudSection(ctx); } catch (e) { console.error(e); }
+
   view.append(
     weekSection(ctx, override, info),
     soundSection(ctx, soundOn !== false),
     hyroxSection(ctx, plan, hyroxSetting),
     programSection(ctx, plan, day, program),
+    ...(cloud ? [cloud] : []),
     backupSection(ctx, lastExportAt),
     await storageSection(),
   );
@@ -409,8 +414,8 @@ function backupSection(ctx, lastExportAt) {
   const importBtn = el('button', { type: 'button', class: 'btn btn-ghost', onclick: () => fileInput.click() }, 'Importer');
 
   return el('section', { class: 'card s-section' },
-    el('h2', { class: 'h2', text: 'Sauvegarde' }),
-    el('p', { class: 'muted s-small', text: 'Les données restent sur ce téléphone. Un export JSON permet de les retrouver ailleurs.' }),
+    el('h2', { class: 'h2', text: 'Export JSON' }),
+    el('p', { class: 'muted s-small', text: 'Un fichier de toutes les données, à garder de côté ou à réimporter.' }),
     status,
     el('div', { class: 's-actions' }, exportBtn, shareBtn, importBtn),
     fileInput,

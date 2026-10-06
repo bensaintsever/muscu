@@ -11,7 +11,7 @@ Une app installable sur Pixel 8 Pro (Chrome Android) qui :
 ## Choix techniques
 
 - **PWA statique**, HTML + CSS + JS en modules ES, **aucune étape de build, aucune dépendance CDN** (doit marcher hors ligne en salle).
-- Données dans **IndexedDB** (local au téléphone) + `navigator.storage.persist()` + **export/import JSON** pour la sauvegarde.
+- Données dans **IndexedDB** (local au téléphone) + `navigator.storage.persist()` + **export/import JSON** + **sauvegarde en ligne Supabase** facultative (voir la section dédiée).
 - Hébergement visé : GitHub Pages (comme l'app du semi). À décider en fin de projet.
 - Thème sombre, gros boutons (usage à une main, mains moites), viewport 412 px de large (Pixel 8 Pro).
 - Minuteur de repos : basé sur un timestamp de fin (survit à la mise en veille / changement d'onglet), vibration + bip à la fin, Wake Lock pour garder l'écran allumé pendant la séance.
@@ -54,6 +54,14 @@ Une app installable sur Pixel 8 Pro (Chrome Android) qui :
 | `js/settings.js` | vue Réglages : édition du programme du bloc en cours, type de semaine forcé, export/import | agent **Suivi** |
 | `js/settings-cycles.js` | Réglages : date du Hyrox (provisoire par défaut) | agent **Suivi** |
 | `manifest.webmanifest`, `sw.js`, `icons/` | installabilité, hors ligne | agent **Suivi** |
+| `js/backup.js` | export / import JSON (réexportés par `db.js`) | agent **Data** |
+| `js/cloud-config.js` | URL du projet Supabase et clé publishable | orchestrateur |
+| `js/cloud.js` | client Supabase maison (fetch) : auth e-mail + mot de passe, session, upsert et lecture PostgREST | orchestrateur |
+| `js/sync.js` | pur : fusion, lignes, file d'attente, textes d'état, moteur de synchro (stockage et cloud injectés) | orchestrateur |
+| `js/sync-store.js` | IndexedDB de la synchro : session, file, instantané local, application des données du cloud | orchestrateur |
+| `js/sync-run.js` | branchement : quand pousser, quand récupérer, état pour Réglages | orchestrateur |
+| `js/settings-cloud.js` | Réglages : section « Sauvegarde en ligne » | agent **Suivi** |
+| `tests/sync.test.mjs` | tests Node de la fusion, de la file, du moteur et du client (fetch simulé) | orchestrateur |
 
 Chaque agent n'écrit **que** ses fichiers. Les interfaces ci-dessous sont le contrat.
 
@@ -109,7 +117,7 @@ Chaque agent n'écrit **que** ses fichiers. Les interfaces ci-dessous sont le co
 
 ## Contrat `js/db.js` (toutes les fonctions sont async, export nommé)
 
-- `init()` : ouvre la base `muscu` (stores `logs`, `kv`), seed le programme et les séances de référence au premier lancement, demande `navigator.storage.persist()`.
+- `init()` : ouvre la base `muscu` (version 2 : stores `logs`, `kv`, `sync`), seed le programme et les séances de référence au premier lancement, demande `navigator.storage.persist()`.
 - `getProgram()` / `saveProgram(program)`
 - `resetProgram()` : remet le programme de `program.js`.
 - `startLog(sessionId, weekType)` → log neuf `in-progress` (enregistré).
@@ -120,7 +128,7 @@ Chaque agent n'écrit **que** ses fichiers. Les interfaces ci-dessous sont le co
 - `getLog(id)`, `deleteLog(id)`
 - `getExerciseHistory(exerciseId)` → `[{ logId, date, weekType, isReference, sets: [{ load, reps }] }]`, **plus anciens d'abord**, logs `done` seulement.
 - `getSetting(key, fallback)` / `setSetting(key, value)` (store `kv`)
-- `exportAll()` → `{ app: 'muscu', schema: 1, exportedAt, program, logs, settings }`
+- `exportAll()` → `{ app: 'muscu', schema: 1, exportedAt, program, logs, settings }` (dans `backup.js`, réexporté)
 - `importAll(data)` : remplace tout après validation minimale ; lève une erreur lisible sinon.
 
 Réglages connus : `weekTypeOverride` (null ou un type), `soundOn` (bool, défaut true), `hyroxDate` (null = date provisoire), `cycleEdits` (retouches faites pendant un bloc, voir Cycles).
@@ -173,6 +181,21 @@ Contenu : `CYCLES.md` (fait foi). Code : `js/cycles-data.js` + `js/cycles.js` + 
 ### Simuler une date (tests au navigateur)
 
 Ajouter `?today=AAAA-MM-JJ` avant le `#` : `http://localhost:8771/?today=2026-10-12#/`. Seule `today()` de `js/clock.js` le lit : accueil, Réglages, Historique et date des séances démarrées suivent la date simulée ; l'heure reste réelle. Sans paramètre, rien ne change. Les séances créées en simulation sont de vraies données : utiliser une base de test et la supprimer ensuite.
+
+## Sauvegarde en ligne (depuis le 06/10/2026)
+
+Supabase, projet dédié. Table `public.muscu_items(user_id, kind 'log'|'kv', key, data jsonb, deleted, updated_at)`, clé primaire `(user_id, kind, key)`, RLS : chacun ne voit que ses lignes. Pas de supabase-js : `js/cloud.js` parle à GoTrue et PostgREST avec `fetch`.
+
+- **Compte** : e-mail + mot de passe, confirmation d'adresse obligatoire (lien envoyé par Supabase, qui ramène sur l'app ; les jetons du lien sont lus au démarrage et connectent directement ce navigateur). Le mot de passe n'est jamais stocké ; la session (jetons, expiration, id, e-mail) est dans le store IndexedDB `sync`, hors export JSON, rafraîchie quand il reste moins d'une minute ou après un 401.
+- **Ce qui est synchronisé** : chaque log (`kind 'log'`, `key` = id, `data` = log) et les réglages `SYNCED_KV` de `sync.js` : `program`, `cycleEdits`, `weekTypeOverride`, `soundOn`, `hyroxDate` (`data` = `{ value, updatedAt }`). Restent locaux : `seeded`, `migrations`, `lastExportAt`, et tout le store `sync`.
+- **Horodatage** : `saveLog` pose `log.updatedAt` (ms) ; `setSetting`/`saveProgram` d'une clé synchronisée posent `sync['stamp:<clé>']` (les valeurs kv sont parfois des booléens, d'où un horodatage à côté). Seed et migrations ne sont pas horodatés (0) : sur un téléphone neuf, tout ce qui vient du cloud gagne. Un log d'avant la synchro vaut `endedAt` ou `startedAt`. L'horodatage voyage dans `data.updatedAt` et dans `updated_at`, envoyé explicitement.
+- **Fusion** (`decide`, `planSync`) : la version la plus récente gagne ; contenu identique, rien ; même horodatage et contenus différents, le cloud tranche (tous les appareils convergent). Suppression = pierre tombale (`sync['tomb:<id>']` en local, ligne `deleted = true` au cloud), propagée, et battue seulement par une modification plus récente. **La séance en cours de ce téléphone n'est jamais modifiée ni supprimée par le cloud** (elle est repoussée telle quelle) ; une séance en cours venue d'ailleurs n'est pas importée tant qu'une séance est active ici. Tout est revérifié dans la transaction d'écriture (une écriture locale faite entre-temps gagne). Un programme reçu repasse par les migrations (idempotentes).
+- **File d'attente** : chaque écriture synchronisée pose `sync['out:<kind>:<clé>']` = jeton neuf, dans la même transaction (une entrée par élément). L'envoi relit la version courante de chaque élément, fait un upsert `POST /rest/v1/muscu_items?on_conflict=user_id,kind,key` avec `Prefer: resolution=merge-duplicates`, puis ne retire que les entrées dont le jeton n'a pas changé pendant l'envoi. `user_id` est envoyé (id de session) : toutes les colonnes de la clé de conflit sont dans la charge, et RLS refuse toute ligne qui ne serait pas à l'utilisateur.
+- **Quand** : envoi groupé 2,5 s après chaque écriture (série validée, fin de séance, réglage), immédiat à l'ouverture des Réglages, au retour du réseau (`online`) et quand l'app passe en arrière-plan ; réessai à attente croissante (30 s → 10 min) après une erreur. Synchro complète (lecture de tout, fusion, envoi des différences et de la file) au démarrage si connecté, à la connexion et sur « Sauvegarder maintenant ». Rien n'est attendu par l'écran de séance ; les erreurs sont silencieuses et visibles dans Réglages.
+- **Premier branchement** : cloud vide → tout le local part ; les deux remplis → fusion ; téléphone neuf (seed seul) → tout revient. Après une récupération, l'écran courant est redessiné, sauf en séance ou pendant une saisie.
+- **Import JSON** : écriture comme une autre, tout ce qu'il pose est horodaté maintenant et part au cloud ; les séances qu'il fait disparaître reçoivent une pierre tombale.
+- **Déconnexion** : oublie la session, ne touche à aucune donnée locale.
+- `sw.js` n'intercepte ni les requêtes hors GET ni les autres origines (`*.supabase.co`) : jamais mises en cache.
 
 ## Étapes
 

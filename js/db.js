@@ -1,11 +1,14 @@
-// Stockage IndexedDB : base `muscu`, stores `logs` et `kv`.
+// Stockage IndexedDB : base `muscu`, stores `logs`, `kv` et `sync` (session cloud, file d'attente, horodatages).
 import { PROGRAM, REFERENCE_LOGS, MIGRATIONS } from './program.js';
 import { todayISO } from './clock.js';
+import { SYNCED_KV } from './sync.js';
+
+export { exportAll, importAll } from './backup.js';
 
 const DB_NAME = 'muscu';
-const DB_VERSION = 1;
-// Clés du store kv qui ne sont pas des réglages utilisateur.
-const INTERNAL_KEYS = new Set(['seeded', 'program', 'migrations']);
+const DB_VERSION = 2;
+export const SYNC_STORE = 'sync';
+const SYNCED = new Set(SYNCED_KV);
 
 let dbPromise = null;
 let initPromise = null;
@@ -29,14 +32,14 @@ export function localDate(d = new Date()) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function req(request) {
+export function req(request) {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
-function done(tx) {
+export function done(tx) {
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -57,6 +60,7 @@ function openDb() {
         logs.createIndex('date', 'date');
       }
       if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+      if (!db.objectStoreNames.contains(SYNC_STORE)) db.createObjectStore(SYNC_STORE);
     };
     request.onsuccess = () => {
       const db = request.result;
@@ -104,6 +108,31 @@ export function init() {
   return initPromise;
 }
 
+export async function transaction(names, mode = 'readonly') {
+  return (await init()).transaction(names, mode);
+}
+
+// — Suivi des écritures pour la sauvegarde en ligne —
+// Chaque écriture synchronisée met l'élément en file (une entrée par clé, jeton neuf) et prévient les abonnés.
+
+const writeListeners = new Set();
+export function onLocalWrite(fn) {
+  writeListeners.add(fn);
+  return () => writeListeners.delete(fn);
+}
+export function notifyWrite(kind, key) {
+  for (const fn of writeListeners) { try { fn({ kind, key }); } catch (e) { console.error(e); } }
+}
+
+export function markDirty(sync, kind, key, now) {
+  sync.put(`${now}-${Math.random().toString(36).slice(2, 10)}`, `out:${kind}:${key}`);
+}
+
+export function stampKv(sync, key, now) {
+  sync.put(now, `stamp:${key}`);
+  markDirty(sync, 'kv', key, now);
+}
+
 async function store(name, mode = 'readonly') {
   const db = await init();
   const tx = db.transaction(name, mode);
@@ -116,9 +145,17 @@ async function kvGet(key) {
 }
 
 async function kvPut(key, value) {
-  const { tx, os } = await store('kv', 'readwrite');
-  os.put(value, key);
+  if (!SYNCED.has(key)) {
+    const { tx, os } = await store('kv', 'readwrite');
+    os.put(value, key);
+    await done(tx);
+    return;
+  }
+  const tx = await transaction(['kv', SYNC_STORE], 'readwrite');
+  tx.objectStore('kv').put(value, key);
+  stampKv(tx.objectStore(SYNC_STORE), key, Date.now());
   await done(tx);
+  notifyWrite('kv', key);
 }
 
 // — Programme —
@@ -160,9 +197,15 @@ export async function startLog(sessionId, weekType, extra = {}) {
 }
 
 export async function saveLog(log) {
-  const { tx, os } = await store('logs', 'readwrite');
-  os.put(clone(log));
+  const now = Date.now();
+  log.updatedAt = now;
+  const tx = await transaction(['logs', SYNC_STORE], 'readwrite');
+  tx.objectStore('logs').put(clone(log));
+  const sync = tx.objectStore(SYNC_STORE);
+  sync.delete(`tomb:${log.id}`);
+  markDirty(sync, 'log', log.id, now);
   await done(tx);
+  notifyWrite('log', log.id);
   return log;
 }
 
@@ -171,10 +214,16 @@ export async function getLog(id) {
   return (await req(os.get(id))) ?? null;
 }
 
+// Suppression : une pierre tombale datée part vers le cloud pour effacer la séance partout.
 export async function deleteLog(id) {
-  const { tx, os } = await store('logs', 'readwrite');
-  os.delete(id);
+  const now = Date.now();
+  const tx = await transaction(['logs', SYNC_STORE], 'readwrite');
+  tx.objectStore('logs').delete(id);
+  const sync = tx.objectStore(SYNC_STORE);
+  sync.put(now, `tomb:${id}`);
+  markDirty(sync, 'log', id, now);
   await done(tx);
+  notifyWrite('log', id);
 }
 
 async function logsByStatus(status) {
@@ -243,56 +292,4 @@ export async function getSetting(key, fallback) {
 export async function setSetting(key, value) {
   await kvPut(key, value);
   return value;
-}
-
-// — Sauvegarde —
-
-export async function exportAll() {
-  const db = await init();
-  const tx = db.transaction(['logs', 'kv'], 'readonly');
-  const kv = tx.objectStore('kv');
-  const [logs, keys, values] = await Promise.all([
-    req(tx.objectStore('logs').getAll()),
-    req(kv.getAllKeys()),
-    req(kv.getAll()),
-  ]);
-  let program = null;
-  const settings = {};
-  keys.forEach((key, i) => {
-    if (key === 'program') program = values[i];
-    else if (!INTERNAL_KEYS.has(key)) settings[key] = values[i];
-  });
-  return {
-    app: 'muscu',
-    schema: 1,
-    exportedAt: new Date().toISOString(),
-    program: program ?? clone(PROGRAM),
-    logs: logs.sort(byDateAsc),
-    settings,
-  };
-}
-
-export async function importAll(data) {
-  if (!data || typeof data !== 'object') throw new Error('Fichier illisible : ce n\'est pas un export Muscu.');
-  if (data.app !== 'muscu') throw new Error('Ce fichier ne vient pas de l\'app Muscu.');
-  if (!data.program || typeof data.program !== 'object') throw new Error('Export incomplet : programme manquant.');
-  if (!Array.isArray(data.logs)) throw new Error('Export incomplet : liste des séances manquante.');
-  const bad = data.logs.findIndex((l) => !l || typeof l !== 'object' || l.id == null);
-  if (bad !== -1) throw new Error(`Séance n° ${bad + 1} invalide (identifiant manquant).`);
-
-  const db = await init();
-  const tx = db.transaction(['logs', 'kv'], 'readwrite');
-  const logs = tx.objectStore('logs');
-  const kv = tx.objectStore('kv');
-  logs.clear();
-  kv.clear();
-  for (const log of data.logs) logs.put(log);
-  kv.put(data.program, 'program');
-  const settings = data.settings && typeof data.settings === 'object' ? data.settings : {};
-  for (const [key, value] of Object.entries(settings)) {
-    if (!INTERNAL_KEYS.has(key)) kv.put(value, key);
-  }
-  kv.put(true, 'seeded');
-  await done(tx);
-  return { logs: data.logs.length };
 }
