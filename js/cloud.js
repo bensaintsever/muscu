@@ -170,7 +170,9 @@ export function createCloud({ url, key, table = 'muscu_items', storage, fetch: f
     getSession,
 
     async signUp(email, password) {
-      const { data } = await call('/auth/v1/signup', { method: 'POST', body: { email, password } });
+      // Retour vers l'app elle-même après confirmation, pas vers l'adresse par défaut du projet
+      const back = typeof location !== 'undefined' ? `?redirect_to=${encodeURIComponent(location.origin + location.pathname)}` : '';
+      const { data } = await call(`/auth/v1/signup${back}`, { method: 'POST', body: { email, password } });
       if (data?.access_token) return { session: await keep(data), needsConfirmation: false };
       const user = data?.user || data;
       // Adresse déjà inscrite : GoTrue répond 200 avec un utilisateur sans identité (anti-énumération)
