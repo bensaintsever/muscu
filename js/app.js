@@ -888,10 +888,11 @@ async function renderSession(root, live) {
     const rows = group.map((g) => {
       const gx = exOf(g.ex);
       const total = S.steps.filter((s) => s.ex === g.ex).length;
-      return `<div class="next-row"><div class="n">${esc(gx.name)}</div>
+      const thumb = group.length > 1 ? mediaHTML(g.ex, { size: 'mini', alt: gx.name }) : '';
+      return `<div class="next-row">${thumb}<div class="n">${esc(gx.name)}</div>
         <div class="t">Série ${g.set + 1}/${total}</div><b class="next-load tnum">${esc(planLabel(g.ex, g.set))}</b></div>`;
     }).join('');
-    return `<div class="card next-card${group.length > 1 ? ' multi' : ''}">${mediaHTML(st.ex, { size: 'mini', alt: ex.name })}<div class="next-txt"><div class="k">${group.length > 1 ? 'Ensuite · superset' : 'Ensuite'}</div>
+    return `<div class="card next-card${group.length > 1 ? ' multi' : ''}">${group.length > 1 ? '' : mediaHTML(st.ex, { size: 'mini', alt: ex.name })}<div class="next-txt"><div class="k">${group.length > 1 ? 'Ensuite · superset' : 'Ensuite'}</div>
       ${rows}</div></div>`;
   }
 

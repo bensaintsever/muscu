@@ -440,7 +440,12 @@ textarea.note:focus { outline: none; border-color: var(--acc); }
 /* Repos : tout doit tenir sans défiler, même avec l'encart et un superset */
 .rest .ring { width: min(72vw, 36dvh, 300px); margin: 8px auto 4px; }
 .rest .exm-mini { max-height: 20dvh; }
-.rest .next-card.multi .exm-mini { max-height: 13dvh; aspect-ratio: 3 / 1; }
+/* Superset : une ligne par exo, vignette à gauche, charge à droite */
+.rest .next-card.multi .next-row { grid-template-columns: 92px 1fr auto; }
+.rest .next-card.multi .next-row .exm-mini { grid-column: 1; grid-row: 1 / span 2; width: 92px; height: 66px; max-height: none; aspect-ratio: auto; align-self: center; }
+.rest .next-card.multi .next-row .n, .rest .next-card.multi .next-row .t { grid-column: 2; }
+.rest .next-card.multi .next-load { grid-column: 3; }
 .rest-next .n { font-size: 18px; }
 .rest-adj .btn { min-height: 56px; }
 .rest .skip { min-height: 64px; margin-top: 10px; }
+.rest .next-card.multi .next-row .n { font-size: 16px; line-height: 1.25; }
