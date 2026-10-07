@@ -174,12 +174,11 @@ function ticks(out, tEnd, now) {
   return oscs;
 }
 
-// Le « go » : attaque qui monte, accord quinte en ondes carrées, assez long pour être entendu en salle.
+// Le « go » : deux notes nettes qui montent (choisi par Benjamin parmi 4 variantes).
 function go(out, t) {
   return [
-    note(out, t, { type: 'square', freq: 523, to: 784, dur: 0.42, gain: 0.4 }),
-    note(out, t, { type: 'square', freq: 784, to: 1175, dur: 0.42, gain: 0.26 }),
-    note(out, t + 0.02, { type: 'sawtooth', freq: 1568, dur: 0.18, gain: 0.14 }),
+    note(out, t, { type: 'sine', freq: 1175, dur: 0.15, gain: 0.62 }),
+    note(out, t + 0.17, { type: 'sine', freq: 1760, dur: 0.5, gain: 0.7 }),
   ];
 }
 
