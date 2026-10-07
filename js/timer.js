@@ -133,29 +133,67 @@ export function unlockAudio() {
   } catch { /* rien */ }
 }
 
-export function beep({ count = 2, freq = 880, dur = 0.12, gap = 0.1 } = {}) {
+// Une note : oscillateur + enveloppe courte, éventuellement avec glissement de hauteur.
+function note(out, t, { type = 'triangle', freq, to, dur, gain }) {
+  const osc = audio.createOscillator();
+  const g = audio.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  if (to) osc.frequency.exponentialRampToValueAtTime(to, t + Math.min(0.08, dur / 2));
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(gain, t + 0.006);
+  g.gain.setValueAtTime(gain, t + dur * 0.55);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(g).connect(out);
+  osc.start(t);
+  osc.stop(t + dur + 0.02);
+  return osc;
+}
+
+// Sortie commune : un compresseur pour que le « go » claque sans saturer.
+function output() {
+  const comp = audio.createDynamicsCompressor();
+  comp.threshold.value = -18;
+  comp.ratio.value = 6;
+  comp.attack.value = 0.002;
+  comp.release.value = 0.15;
+  const lp = audio.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 5000;
+  comp.connect(lp).connect(audio.destination);
+  return comp;
+}
+
+// Trois tops de plus en plus forts (3, 2, 1), le dernier temps libre avant le départ.
+function ticks(out, tEnd, now) {
+  const oscs = [];
+  [3, 2, 1].forEach((k, i) => {
+    const t = tEnd - k;
+    if (t > now + 0.01) oscs.push(note(out, t, { type: 'triangle', freq: 988, dur: 0.09, gain: 0.32 + i * 0.12 }));
+  });
+  return oscs;
+}
+
+// Le « go » : attaque qui monte, accord quinte en ondes carrées, assez long pour être entendu en salle.
+function go(out, t) {
+  return [
+    note(out, t, { type: 'square', freq: 523, to: 784, dur: 0.42, gain: 0.4 }),
+    note(out, t, { type: 'square', freq: 784, to: 1175, dur: 0.42, gain: 0.26 }),
+    note(out, t + 0.02, { type: 'sawtooth', freq: 1568, dur: 0.18, gain: 0.14 }),
+  ];
+}
+
+// Joue le « go » tout de suite (fin de maintien, ou repos sans son programmé).
+export function beep() {
   if (!audio) return;
   try {
     if (audio.state === 'suspended') audio.resume();
-    const t0 = audio.currentTime + 0.02;
-    for (let i = 0; i < count; i++) {
-      const t = t0 + i * (dur + gap);
-      const osc = audio.createOscillator();
-      const gain = audio.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = i === count - 1 ? freq * 1.5 : freq;
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.5, t + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      osc.connect(gain).connect(audio.destination);
-      osc.start(t);
-      osc.stop(t + dur + 0.02);
-    }
+    go(output(), audio.currentTime + 0.02);
   } catch { /* rien */ }
 }
 
-// Bip programmé d'avance dans le moteur audio : il part à l'heure même si la page
-// est en arrière-plan et que ses minuteurs JS sont gelés.
+// Compte à rebours + « go » programmés d'avance dans le moteur audio : ils partent à l'heure
+// même si la page est en arrière-plan et que ses minuteurs JS sont gelés.
 let scheduled = [];
 
 export function scheduleBeep(secondsFromNow) {
@@ -163,21 +201,10 @@ export function scheduleBeep(secondsFromNow) {
   if (!audio || !(secondsFromNow > 0)) return;
   try {
     if (audio.state === 'suspended') audio.resume();
-    const t0 = audio.currentTime + secondsFromNow;
-    for (let i = 0; i < 3; i++) {
-      const t = t0 + i * 0.22;
-      const osc = audio.createOscillator();
-      const gain = audio.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = i === 2 ? 1320 : 880;
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.6, t + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
-      osc.connect(gain).connect(audio.destination);
-      osc.start(t);
-      osc.stop(t + 0.16);
-      scheduled.push(osc);
-    }
+    const now = audio.currentTime;
+    const tEnd = now + secondsFromNow;
+    const out = output();
+    scheduled = [...ticks(out, tEnd, now), ...go(out, tEnd)];
   } catch { scheduled = []; }
 }
 
