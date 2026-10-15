@@ -33,9 +33,9 @@ test('applyLogFixes : séance absente → reste en attente ; présente → appli
   assert.equal(await applyLogFixes(db), 0);
   assert.deepEqual(kv.logFixes, []);
   db.logs = [log()];
-  assert.equal(await applyLogFixes(db), 1);
-  assert.deepEqual(saved, ['l1']);
-  assert.ok(kv.logFixes.includes(fix.id));
+  assert.equal(await applyLogFixes(db), LOG_FIXES.length);
+  assert.deepEqual(saved, LOG_FIXES.map(() => 'l1'));
+  for (const f of LOG_FIXES) assert.ok(kv.logFixes.includes(f.id));
   assert.equal(await applyLogFixes(db), 0);
 });
 
