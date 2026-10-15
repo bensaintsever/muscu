@@ -337,9 +337,9 @@ test('records en direct : e1RM, reps à charge égale, exclusions', () => {
   assert.ok(recordExcluded(EXERCISES['farmer-carry'], { weekType: 'normale' }));
 });
 
-test('16/10 : jambes allégées pour le genou (presse, leg curl, mollets, maintien seul)', () => {
+test('16/10 : jambes allégées pour le genou (presse, leg curl, mollets)', () => {
   const p = prog('b1-derniere-charge');
   const { session } = applyAdjust(p, sess(p, 'jambes'), day('2026-10-16').adjust);
-  assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')), ['presse', 'leg-curl', 'mollet-presse', 'maintien-oh']);
+  assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')), ['presse', 'leg-curl', 'mollet-presse']);
   assert.ok(!JSON.stringify(session).includes('fentes-marchees'));
 });
