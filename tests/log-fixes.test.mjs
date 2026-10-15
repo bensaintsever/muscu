@@ -38,3 +38,13 @@ test('applyLogFixes : séance absente → reste en attente ; présente → appli
   assert.ok(kv.logFixes.includes(fix.id));
   assert.equal(await applyLogFixes(db), 0);
 });
+
+test('correction 14/10 : reverse crunch 3 × 15, une seule fois, même si la première est déjà passée', () => {
+  const rc = LOG_FIXES.find((f) => f.id === '2026-10-15-pec-dos-reverse-crunch');
+  const l = log();
+  fix.apply(l);
+  assert.equal(rc.find([l]).id, 'l1');
+  assert.equal(rc.apply(l), true);
+  assert.deepEqual(l.sets.filter((s) => s.exerciseId === 'reverse-crunch').map((s) => s.reps), [15, 15, 15]);
+  assert.equal(rc.apply(l), false);
+});

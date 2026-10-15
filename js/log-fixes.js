@@ -19,6 +19,16 @@ export const LOG_FIXES = [
       return true;
     },
   },
+  {
+    // Même séance : reverse crunch fait (environ 3 × 15), non saisi
+    id: '2026-10-15-pec-dos-reverse-crunch',
+    find: (logs) => LOG_FIXES[0].find(logs),
+    apply(log) {
+      if (log.sets.some((s) => s.exerciseId === 'reverse-crunch')) return false;
+      log.sets.push(...sets('reverse-crunch', 0, [15, 15, 15], log.endedAt || log.startedAt || 0));
+      return true;
+    },
+  },
 ];
 
 // Applique les corrections en attente. Une correction dont la séance est introuvable sur cet
