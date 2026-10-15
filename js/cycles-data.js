@@ -48,6 +48,7 @@ export const EXERCISES = Object.fromEntries([
   BW('squat-elastique', 'Squat élastique', 3, 15, 15, { note: 'Élastique sous les pieds' }),
   BW('fentes-pdc', 'Fentes marchées poids du corps', 3, 20, 20, { repUnit: 'm', repStep: 5 }),
   // Bloc 3
+  E('maintien-oh', 'Maintien haltères au-dessus de la tête', 5, 20, 20, 0, 'bodyweight', { unit: 'reps', repUnit: 's', repStep: 5, note: 'Maintien seul, sans thrusters. Mêmes haltères que d\'habitude, saisis la durée tenue' }),
   E('presse', 'Presse à cuisses', 3, 10, 12, 10, 'machine', { note: 'Pas de rebond en bas, genoux dans l\'axe' }),
   E('hip-thrust', 'Hip thrust barre', 3, 8, 12, 2.5, 'barbell', { start: { load: 40 } }),
   E('farmer-carry', 'Farmer carry haltères', 3, 40, 40, 2, 'dumbbell', { repUnit: 'm', repStep: 10, note: `${ONE}. Distance en mètres`, start: { load: 18 } }),
@@ -116,7 +117,12 @@ export const CYCLES = [
     ],
     schedule: [
       { date: '2026-10-12', sessionId: null, note: 'Cours Hyrox à la place des jambes' },
-      { date: '2026-10-15', sessionId: 'jambes', note: 'Jambes moyenne déplacées au jeudi (Hyrox lundi)' },
+      { date: '2026-10-15', sessionId: null, note: 'Jambes décalées à vendredi' },
+      // Décidé avec le coach course (genou gauche) : allégée, rien de nouveau sous charge
+      { date: '2026-10-16', sessionId: 'jambes',
+        note: 'Allégée pour le genou : seulement s\'il est silencieux ce matin, sinon renfo fessier complet. Charges ~55 %, RIR 3',
+        adjust: { loadFactor: 0.65, dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'],
+          leadBlocks: [one('jx1', 'presse', 90)], extraBlocks: [one('jx2', 'maintien-oh', 60)] } },
       { date: '2026-10-22', sessionId: null, note: 'Dernier cours Hyrox avant le semi' },
     ],
     overrides: {

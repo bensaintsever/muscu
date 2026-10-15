@@ -117,11 +117,18 @@ export function splitEdits({ edited, stored, edits = {}, cycles = CYCLES, source
   return { stored: nextStored, edits: nextEdits };
 }
 
-// Ajustements d'une séance précise : séries fixées, volume réduit, blocs ajoutés ou retirés, repos forcé.
+// Ajustements d'une séance précise : séries fixées, volume réduit, blocs ou exercices ajoutés / retirés, repos forcé.
 export function applyAdjust(program, session, adjust = {}) {
   const s = clone(session);
   const exercises = { ...program.exercises };
   if (adjust.dropTypes?.length) s.blocks = s.blocks.filter((b) => !adjust.dropTypes.includes(b.type));
+  if (adjust.dropExercises?.length) {
+    s.blocks = s.blocks
+      .map((b) => ({ ...b, exercises: b.exercises.filter((id) => !adjust.dropExercises.includes(id)) }))
+      .filter((b) => b.exercises.length)
+      .map((b) => (b.type === 'superset' && b.exercises.length === 1 ? { ...b, type: 'single' } : b));
+  }
+  if (adjust.leadBlocks?.length) s.blocks.unshift(...clone(adjust.leadBlocks));
   if (adjust.extraBlocks?.length) s.blocks.push(...clone(adjust.extraBlocks));
   for (const b of s.blocks) if (adjust.blockRest?.[b.id] != null) b.rest = adjust.blockRest[b.id];
   const ids = new Set(s.blocks.flatMap((b) => b.exercises));

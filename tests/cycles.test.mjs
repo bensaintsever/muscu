@@ -49,15 +49,18 @@ test('cette semaine : jambes lourdes mercredi 07/10, Hyrox jeudi, Épaule/Bras v
   assert.deepEqual(sess(prog('b0-actuel'), 'pec-dos'), { ...structuredClone(PROGRAM.sessions[0]), source: 'b0-actuel' });
 });
 
-test('schedule S13 : Hyrox lundi 12/10 sans jambes, jambes moyenne jeudi 15/10', () => {
+test('schedule S13 : Hyrox lundi 12/10 sans jambes, jambes moyenne décalées au vendredi 16/10', () => {
   const d12 = day('2026-10-12');
   assert.equal(d12.sessionId, null);
   assert.ok(d12.hyrox);
   assert.match(d12.note, /Hyrox/);
   const d15 = day('2026-10-15');
-  assert.equal(d15.sessionId, 'jambes');
-  assert.equal(d15.weekType, 'moyenne');
+  assert.equal(d15.sessionId, null);
   assert.equal(d15.hyrox, false);
+  const d16 = day('2026-10-16');
+  assert.equal(d16.sessionId, 'jambes');
+  assert.equal(d16.weekType, 'moyenne');
+  assert.equal(d16.adjust.loadFactor, 0.65);
   assert.equal(day('2026-10-14').sessionId, 'pec-dos');
   assert.equal(day('2026-10-19').sessionId, 'jambes');
   // Prochaine séance vue du lundi 12/10 : mercredi Pec/Dos
@@ -332,4 +335,11 @@ test('records en direct : e1RM, reps à charge égale, exclusions', () => {
   assert.ok(!recordExcluded(dc, { weekType: 'moyenne' }));
   assert.ok(recordExcluded(dc, { weekType: 'aucune', adjust: { loadFactor: 0.9 } }));
   assert.ok(recordExcluded(EXERCISES['farmer-carry'], { weekType: 'normale' }));
+});
+
+test('16/10 : jambes allégées pour le genou (presse, leg curl, mollets, maintien seul)', () => {
+  const p = prog('b1-derniere-charge');
+  const { session } = applyAdjust(p, sess(p, 'jambes'), day('2026-10-16').adjust);
+  assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')), ['presse', 'leg-curl', 'mollet-presse', 'maintien-oh']);
+  assert.ok(!JSON.stringify(session).includes('fentes-marchees'));
 });

@@ -186,7 +186,7 @@ export function suggest(exercise, history, weekType, opts = {}) {
       load: repsOnly ? 0 : roundLoad(baseLoad * factor, increment),
       reps: Array.from({ length: count }, (_, i) => repsAt(i, repMin)),
       action: 'undulate',
-      reason: opts.loadFactor < 1 ? `Reprise : ${pct} % de la charge de base`
+      reason: opts.loadFactor < 1 ? `Charge allégée : ${pct} % de la charge de base`
         : light ? `Semaine ${WEEK_TYPES[type].label.toLowerCase()} : ${pct} % de la charge de base`
           : `Rampe jambes : ${pct} % de la charge de base`,
     };
