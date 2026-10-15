@@ -122,7 +122,7 @@ export const CYCLES = [
       { date: '2026-10-16', sessionId: 'jambes',
         note: 'Allégée pour le genou : seulement s\'il est silencieux ce matin, sinon renfo fessier complet. Charges ~55 %, RIR 3',
         adjust: { loadFactor: 0.65, dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'],
-          leadBlocks: [one('jx1', 'presse', 90)] } }, // maintien retiré : il fatiguait les épaules avant Épaule / Bras
+          leadBlocks: [one('jx1', 'presse', 90), one('jx2', 'hip-thrust', 90)] } }, // maintien retiré : il fatiguait les épaules avant Épaule / Bras
       { date: '2026-10-22', sessionId: null, note: 'Dernier cours Hyrox avant le semi' },
     ],
     overrides: {
