@@ -6,7 +6,7 @@ import { SYNCED_KV } from './sync.js';
 import { transaction, req, done, SYNC_STORE, markDirty, stampKv, notifyWrite } from './db.js';
 
 // Clés du store kv qui ne sont pas des réglages utilisateur.
-const INTERNAL_KEYS = new Set(['seeded', 'program', 'migrations']);
+const INTERNAL_KEYS = new Set(['seeded', 'program', 'migrations', 'logFixes']);
 
 const byDateAsc = (a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : (a.startedAt || 0) - (b.startedAt || 0));
 

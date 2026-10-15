@@ -107,6 +107,11 @@ async function boot() {
     appEl.innerHTML = `<div class="view">${errorCard("Impossible d'ouvrir la base de données", e)}</div>`;
     return;
   }
+  // Séances complétées après coup (exercices absents de l'app le jour même)
+  try {
+    const { applyLogFixes } = await import('./log-fixes.js');
+    await applyLogFixes(db);
+  } catch (e) { console.error(e); }
   // Retour du lien de confirmation d'e-mail : les jetons sont dans le hash, on les retire avant de router
   let authHash = null;
   if (/(^|[#&/])(access_token|error_description)=/.test(location.hash)) {
