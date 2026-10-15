@@ -159,7 +159,7 @@ test('bloc 1 : supersets au même poste, ancres seules à 2 min, rowing poulie b
   const p = prog('b1-derniere-charge');
   const pd = sess(p, 'pec-dos');
   assert.deepEqual(pd.blocks.filter((b) => b.type === 'superset').map((b) => b.exercises),
-    [['chest-row-incline', 'ecarte-incline'], ['tirage-poulie-haute-1bras', 'ecarte-poulie']]);
+    [['chest-row-incline', 'ecarte-incline'], ['ecarte-banc', 'tirage-un-bras']]);
   assert.ok(!JSON.stringify(p.sessions).includes('rowing-poulie-basse'));
   assert.deepEqual(pd.blocks.slice(0, 2).map((b) => [b.type, b.rest, !!b.cue]), [['single', 120, true], ['single', 120, true]]);
   assert.equal(p.exercises['traction-pronation'].sets, 4);

@@ -130,8 +130,9 @@ export const CYCLES = [
         anchor('pd1', 'traction-pronation'),
         anchor('pd2', 'dc-incline-halteres'),
         ss('pd3', 'chest-row-incline', 'ecarte-incline'),
-        ss('pd4', 'tirage-poulie-haute-1bras', 'ecarte-poulie', 75),
-        one('pd5', 'pallof-press', 45),
+        // Poulies souvent prises : tout aux haltères sur le même banc (choix de Benjamin, 15/10)
+        ss('pd4', 'ecarte-banc', 'tirage-un-bras', 75),
+        one('pd5', 'reverse-crunch', 45),
       ]),
       session('epaule-bras', 'Épaule / Bras', 5, 75, [
         anchor('eb1', 'developpe-barre'),
