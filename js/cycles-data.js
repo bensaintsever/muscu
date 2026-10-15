@@ -118,11 +118,12 @@ export const CYCLES = [
     schedule: [
       { date: '2026-10-12', sessionId: null, note: 'Cours Hyrox à la place des jambes' },
       { date: '2026-10-15', sessionId: null, note: 'Jambes décalées à vendredi' },
-      // Décidé avec le coach course (genou gauche) : allégée, rien de nouveau sous charge
+      // Décidé avec le coach course (genou gauche), révisé le 15/10 : 2 séries lourdes sur ce qui
+      // ne charge pas le genou plutôt que 3 séries légères. Semaine moyenne (85 %) × 0,94 ≈ 80 %.
       { date: '2026-10-16', sessionId: 'jambes',
-        note: 'Allégée pour le genou : seulement s\'il est silencieux ce matin, sinon renfo fessier complet. Charges ~55 %, RIR 3',
-        adjust: { loadFactor: 0.65, dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'],
-          leadBlocks: [one('jx1', 'presse', 90), one('jx2', 'hip-thrust', 90)] } }, // maintien retiré : il fatiguait les épaules avant Épaule / Bras
+        note: 'Seulement si le genou est silencieux ce matin, sinon renfo fessier complet. 2 séries à ~80 %, 3 reps en réserve, jamais à l\'échec (longue dimanche)',
+        adjust: { loadFactor: 0.94, sets: 2, dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'],
+          leadBlocks: [one('jx2', 'hip-thrust', 120)] } }, // presse écartée (genou fléchi sous charge), maintien retiré (épaules)
       { date: '2026-10-22', sessionId: null, note: 'Dernier cours Hyrox avant le semi' },
     ],
     overrides: {

@@ -60,7 +60,8 @@ test('schedule S13 : Hyrox lundi 12/10 sans jambes, jambes moyenne décalées au
   const d16 = day('2026-10-16');
   assert.equal(d16.sessionId, 'jambes');
   assert.equal(d16.weekType, 'moyenne');
-  assert.equal(d16.adjust.loadFactor, 0.65);
+  assert.equal(d16.adjust.loadFactor, 0.94);
+  assert.equal(d16.adjust.sets, 2);
   assert.equal(day('2026-10-14').sessionId, 'pec-dos');
   assert.equal(day('2026-10-19').sessionId, 'jambes');
   // Prochaine séance vue du lundi 12/10 : mercredi Pec/Dos
@@ -337,9 +338,9 @@ test('records en direct : e1RM, reps à charge égale, exclusions', () => {
   assert.ok(recordExcluded(EXERCISES['farmer-carry'], { weekType: 'normale' }));
 });
 
-test('16/10 : jambes allégées pour le genou (presse, hip thrust, leg curl, mollets)', () => {
+test('16/10 : jambes allégées pour le genou (hip thrust, leg curl, mollets, 2 séries lourdes)', () => {
   const p = prog('b1-derniere-charge');
   const { session } = applyAdjust(p, sess(p, 'jambes'), day('2026-10-16').adjust);
-  assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')), ['presse', 'hip-thrust', 'leg-curl', 'mollet-presse']);
+  assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')), ['hip-thrust', 'leg-curl', 'mollet-presse']);
   assert.ok(!JSON.stringify(session).includes('fentes-marchees'));
 });
