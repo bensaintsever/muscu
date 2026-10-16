@@ -32,6 +32,7 @@ export const EXERCISES = Object.fromEntries([
   E('face-pull', 'Face pull corde', 3, 12, 15, 2.5, 'cable'),
   E('elevation-laterale-poulie', 'Élévation latérale poulie', 3, 12, 15, 1.25, 'cable', { note: 'Au poste vis-à-vis, comme le face pull', start: { load: 5 } }),
   E('barre-front-halteres', 'Barre au front haltères, banc incliné 45°', 3, 8, 12, 2, 'dumbbell', { note: `Même banc à 45° que le curl. Coudes fixes, les haltères descendent derrière la tête. ${ONE}`, start: { load: 10 } }),
+  E('barre-front-ez', 'Barre au front barre EZ, banc 45°', 3, 8, 12, 2.5, 'barbell', { note: 'Charge totale de la barre. Coudes fixes, la barre descend derrière la tête. Même banc que le curl', start: { load: 20 } }),
   E('curl-incline', 'Curl incliné haltères, banc 45°', 3, 8, 12, 2, 'dumbbell', { note: `Bras tendus le long du corps, en arrière du buste. Coudes immobiles. ${ONE}`, start: { load: 10 } }),
   E('pushdown-corde', 'Pushdown corde', 3, 10, 15, 2.5, 'cable', { start: { load: 25 } }),
   E('curl-marteau-halteres', 'Curl marteau haltères', 3, 10, 12, 2, 'dumbbell', { note: ONE, start: { load: 12 } }),
@@ -144,7 +145,7 @@ export const CYCLES = [
       session('epaule-bras', 'Épaule / Bras', 5, 75, [
         anchor('eb1', 'developpe-barre'),
         ss('eb2', 'elevation-laterale-poulie', 'face-pull'),
-        ss('eb3', 'barre-front-halteres', 'curl-incline'),
+        ss('eb3', 'barre-front-ez', 'curl-incline'),
         ss('eb4', 'pushdown-corde', 'curl-marteau-cable', 60),
       ]),
     ],
@@ -297,7 +298,7 @@ export const CYCLES = [
       session('epaule-bras', 'Épaule / Bras', 5, 75, [
         anchor('eb1', 'developpe-barre'),
         ss('eb2', 'elevation-laterale-poulie', 'face-pull'),
-        ss('eb3', 'curl-incline', 'barre-front-halteres'),
+        ss('eb3', 'curl-incline', 'barre-front-ez'),
         ss('eb4', 'pushdown-corde', 'curl-marteau-cable', 60),
         one('eb5', 'burpees', 60),
       ]),
