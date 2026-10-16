@@ -31,8 +31,8 @@ export const EXERCISES = Object.fromEntries([
   E('pallof-press', 'Pallof press câble', 3, 10, 12, 2.5, 'cable', { note: 'Par côté. Le buste ne tourne pas' }),
   E('face-pull', 'Face pull corde', 3, 12, 15, 2.5, 'cable'),
   E('elevation-laterale-poulie', 'Élévation latérale poulie', 3, 12, 15, 1.25, 'cable', { note: 'Au poste vis-à-vis, comme le face pull', start: { load: 5 } }),
-  E('barre-front-halteres', 'Barre au front haltères, banc incliné', 3, 8, 12, 2, 'dumbbell', { note: `Même banc incliné que le curl. ${ONE}`, start: { load: 10 } }),
-  E('curl-incline', 'Curl incliné haltères', 3, 8, 12, 2, 'dumbbell', { note: ONE, start: { load: 10 } }),
+  E('barre-front-halteres', 'Barre au front haltères, banc incliné 45°', 3, 8, 12, 2, 'dumbbell', { note: `Même banc à 45° que le curl. Coudes fixes, les haltères descendent derrière la tête. ${ONE}`, start: { load: 10 } }),
+  E('curl-incline', 'Curl incliné haltères, banc 45°', 3, 8, 12, 2, 'dumbbell', { note: `Bras tendus le long du corps, en arrière du buste. Coudes immobiles. ${ONE}`, start: { load: 10 } }),
   E('pushdown-corde', 'Pushdown corde', 3, 10, 15, 2.5, 'cable', { start: { load: 25 } }),
   E('curl-marteau-halteres', 'Curl marteau haltères', 3, 10, 12, 2, 'dumbbell', { note: ONE, start: { load: 12 } }),
   // Bloc 2 et Trêve (sans salle)
