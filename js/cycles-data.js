@@ -126,6 +126,12 @@ export const CYCLES = [
         adjust: { loadFactor: 0.94, sets: 2, dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'],
           leadBlocks: [one('jx2', 'hip-thrust', 120)] } }, // presse écartée (genou fléchi sous charge), maintien retiré (épaules)
       { date: '2026-10-22', sessionId: null, note: 'Dernier cours Hyrox avant le semi' },
+      // Décidé avec le coach course le 26/10 (genou gauche, reprise de la course en cours) : dernière séance
+      // jambes avant le semi, sans mouvement de descente/montée. Semaine lourde (100 %) × 0,8 ≈ 80 %.
+      { date: '2026-10-26', sessionId: 'jambes',
+        note: 'Sans fentes, step-up ni thrusters (genou). 3 séries à ~80 %, 3 reps en réserve, jamais à l\'échec : test de course demain. Si le genou parle : renfo fessier complet à la place',
+        adjust: { loadFactor: 0.8, sets: 3, dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'],
+          leadBlocks: [one('jx2', 'hip-thrust', 120), one('jx3', 'sdt-roumain', 90)] } },
     ],
     overrides: {
       'traction-pronation': { sets: 4, repMin: 6, repMax: 8 },
@@ -150,9 +156,7 @@ export const CYCLES = [
       ]),
     ],
     challenge: { tests: [
-      { id: 'b1-jambes', date: '2026-10-26', sessionId: 'jambes', exerciseIds: ['fentes-marchees', 'step-up'], kind: 'beatSession',
-        refDate: '2026-10-07', fallbackRef: 'ref-jambes',
-        label: 'Fentes et step-up : plus de reps totales que le 07/10, même charge, RIR 2 minimum' },
+      // Défi jambes du 26/10 (fentes et step-up à battre) retiré le 26/10 : ces mouvements sont écartés pour le genou gauche.
       { id: 'b1-traction', date: '2026-10-28', sessionId: 'pec-dos', exerciseId: 'traction-pronation', kind: 'maxReps', target: { reps: 11 },
         label: 'Tractions pronation : 11 reps en une série, poids du corps' },
       { id: 'b1-developpe', date: '2026-10-30', sessionId: 'epaule-bras', exerciseId: 'developpe-barre', kind: 'loadForReps', target: { load: 32.5, reps: 6, sets: 4 },

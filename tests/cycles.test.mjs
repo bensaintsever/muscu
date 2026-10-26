@@ -125,9 +125,9 @@ test('date du Hyrox : Moteur et Duo recalculés à rebours', () => {
 // ---------- Défis ----------
 
 test('défis : semaine défi, séance concernée, prochain défi, prochaine course', () => {
-  assert.deepEqual(testsInWeek(R, '2026-10-28').map((t) => t.id), ['b1-jambes', 'b1-traction', 'b1-developpe']);
+  assert.deepEqual(testsInWeek(R, '2026-10-28').map((t) => t.id), ['b1-traction', 'b1-developpe']);
   assert.equal(testsInWeek(R, '2026-10-20').length, 0);
-  assert.equal(nextChallenge(R, '2026-10-13').id, 'b1-jambes');
+  assert.equal(nextChallenge(R, '2026-10-13').id, 'b1-traction');
   const pd = sess(prog('b1-derniere-charge'), 'pec-dos');
   const log = { date: '2026-10-29', sessionId: 'pec-dos', sets: [] };
   assert.deepEqual(testsForLog(R, log, exIds(pd)).map((t) => t.id), ['b1-traction']);
@@ -144,11 +144,6 @@ test('défis : verdicts', () => {
   const dev = (reps) => ({ sets: reps.map((r, i) => set('developpe-barre', 32.5, r, i)) });
   assert.equal(evaluateTest(t('b1-developpe'), dev([6, 6, 6, 6])).status, 'success');
   assert.equal(evaluateTest(t('b1-developpe'), dev([6, 6, 6, 5])).status, 'fail');
-  // Battre la séance du 07/10, sinon les références du 01/10
-  const refLog = REFERENCE_LOGS.find((l) => l.id === 'ref-jambes');
-  const legs = (fentes, step) => ({ sets: [...fentes.map((r, i) => set('fentes-marchees', 40, r, i)), ...step.map((r, i) => set('step-up', 20, r, i))] });
-  assert.equal(evaluateTest(t('b1-jambes'), legs([12, 13, 12], [12, 12, 12, 12]), { refLog }).status, 'success');
-  assert.equal(evaluateTest(t('b1-jambes'), legs([12, 12, 12], [12, 12, 12, 12]), { refLog }).status, 'fail');
   // Mini-défi du 09/10, référence en dur
   assert.equal(evaluateTest(t('b0-developpe'), { sets: [8, 7, 6, 5].map((r, i) => set('developpe-barre', 30, r, i)) }).status, 'success');
   // Chrono : la première mesure sert de référence, ensuite plus bas = mieux
@@ -343,4 +338,19 @@ test('16/10 : jambes allégées pour le genou (hip thrust, leg curl, mollets, 2 
   const { session } = applyAdjust(p, sess(p, 'jambes'), day('2026-10-16').adjust);
   assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')), ['hip-thrust', 'leg-curl', 'mollet-presse']);
   assert.ok(!JSON.stringify(session).includes('fentes-marchees'));
+});
+
+test('26/10 : jambes sans mouvement de genou (hip thrust, soulevé de terre roumain, leg curl, mollets, 3 séries à ~80 %)', () => {
+  const p = prog('b1-derniere-charge');
+  const d = day('2026-10-26');
+  assert.equal(d.sessionId, 'jambes');
+  assert.equal(d.adjust.loadFactor, 0.8);
+  assert.equal(d.adjust.sets, 3);
+  const { program, session } = applyAdjust(p, sess(p, 'jambes'), d.adjust);
+  assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')), ['hip-thrust', 'sdt-roumain', 'leg-curl', 'mollet-presse']);
+  const ids = session.blocks.flatMap((b) => b.exercises);
+  for (const banned of ['fentes-marchees', 'step-up', 'presse']) assert.ok(!ids.includes(banned), banned);
+  assert.ok(!session.blocks.some((b) => b.type === 'interval'));
+  for (const id of ['hip-thrust', 'sdt-roumain', 'leg-curl', 'mollet-presse']) assert.equal(program.exercises[id].sets, 3, id);
+  assert.ok(!testsInWeek(R, '2026-10-26').some((t) => t.sessionId === 'jambes'));
 });
