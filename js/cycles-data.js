@@ -84,6 +84,8 @@ const anchor = (id, ex) => one(id, ex, 120, { cue: RENFO });
 const ss = (id, a, b, rest) => ({ id, type: 'superset', exercises: [a, b], ...(rest != null ? { rest } : {}) });
 const wallball = (id, rest = 90) => ({ id, type: 'interval', exercises: ['wallball-thruster'], holdSec: 20, rest });
 const session = (id, name, weekday, rest, blocks, more = {}) => ({ id, name, weekday, rest, blocks, ...more });
+// Genou gauche : pas de fentes, step-up ni thrusters (bloc intervalle wall ball) tant que le coach course n'a pas validé.
+const KNEE_SAFE = { dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'] };
 const maison = (weekday) => session('wallball-maison', 'Wall balls maison', weekday, 90, [one('w1', 'wallball-reel')], { home: true });
 const chrono = (id, exId) => session(id, 'Wall balls, chrono', 6, 60, [one('c1', exId)], { home: true, scheduledOnly: true });
 
@@ -200,8 +202,12 @@ export const CYCLES = [
     start: '2026-11-23', end: '2026-12-20',
     weeks: [
       { index: 1, start: '2026-11-23', legs: 'aucune', note: 'Semaine après le semi : pas de jambes' },
-      { index: 2, start: '2026-11-30', legs: 'normale', factor: 0.6, note: 'Rampe jambes : 60 % des charges du 26/10' },
-      { index: 3, start: '2026-12-07', legs: 'normale', factor: 0.8, note: 'Rampe jambes : 80 % des charges du 26/10' },
+      // Décidé avec le coach course le 26/10 (genou gauche) : fentes, step-up et thrusters exclus par défaut,
+      // levés un par un seulement sur son feu vert. La rampe part de la dernière séance à pleine charge (06/10).
+      { index: 2, start: '2026-11-30', legs: 'normale', factor: 0.6, adjust: KNEE_SAFE,
+        note: 'Rampe jambes : 60 % des charges pleines (06/10). Genou : fentes, step-up et thrusters à réintroduire sur feu vert du coach course' },
+      { index: 3, start: '2026-12-07', legs: 'normale', factor: 0.8, adjust: KNEE_SAFE,
+        note: 'Rampe jambes : 80 % des charges pleines (06/10). Genou : fentes, step-up et thrusters à réintroduire sur feu vert du coach course' },
       { index: 4, start: '2026-12-14', legs: 'normale', factor: 1, isChallenge: true },
     ],
     overrides: {

@@ -354,3 +354,16 @@ test('26/10 : jambes sans mouvement de genou (hip thrust, soulevé de terre roum
   for (const id of ['hip-thrust', 'sdt-roumain', 'leg-curl', 'mollet-presse']) assert.equal(program.exercises[id].sets, 3, id);
   assert.ok(!testsInWeek(R, '2026-10-26').some((t) => t.sessionId === 'jambes'));
 });
+
+test('rampe jambes 30/11 et 07/12 : fentes, step-up et thrusters exclus (genou)', () => {
+  for (const [iso, factor] of [['2026-11-30', 0.6], ['2026-12-07', 0.8]]) {
+    const d = day(iso);
+    assert.equal(d.sessionId, 'jambes', iso);
+    assert.equal(d.legFactor, factor, iso);
+    const p = prog(d.source);
+    const { session } = applyAdjust(p, sess(p, 'jambes'), d.adjust);
+    const ids = exIds(session);
+    for (const banned of ['fentes-marchees', 'step-up', 'wallball-thruster']) assert.ok(!ids.includes(banned), `${iso} ${banned}`);
+    for (const kept of ['leg-curl', 'mollet-presse', 'hip-thrust']) assert.ok(ids.includes(kept), `${iso} ${kept}`);
+  }
+});
