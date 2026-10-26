@@ -1,6 +1,6 @@
 // Moteur des cycles : dates des blocs, séance prévue un jour donné, défis, comptes à rebours.
 // Fonctions pures (dates en chaînes 'AAAA-MM-JJ'), importables dans Node.
-import { CYCLES, CYCLES_DEFAULTS, HYROX_CLASS } from './cycles-data.js';
+import { CYCLES, CYCLES_DEFAULTS, HYROX_CLASS, KNEE_GUARD } from './cycles-data.js';
 import { PROGRAM } from './program.js';
 import { weekInfo } from './progression.js';
 
@@ -52,7 +52,7 @@ function finish(def, start, end, race, extra = {}) {
   const tests = (def.challenge?.tests || []).map((t, i) => {
     const date = t.date || (t.race ? race : dateOfRef({ week: cw, weekday: t.weekday }, cw ? weeks : chWeeks, race)[0]);
     return { ...clone(t), id: t.id || `${def.id}:${i}`, blockId: def.id, date };
-  }).filter((t) => t.date);
+  }).filter((t) => t.date && !kneeBlocked(t.date, t.exerciseIds || (t.exerciseId ? [t.exerciseId] : [])));
   return { ...clone(def), ...extra, start, end, weeks, schedule, tests };
 }
 
@@ -123,6 +123,20 @@ export function hyroxClassOn(iso, race = CYCLES_DEFAULTS.hyroxDate) {
   return !(before >= 0 && before < h.minDaysBeforeRace);
 }
 
+const kneeBlocked = (iso, ids) => iso >= KNEE_GUARD.since && ids.some((id) => KNEE_GUARD.exercises.includes(id));
+
+// Ajoute les exclusions genou à un ajustement, blocs ajoutés compris (sans effet avant KNEE_GUARD.since).
+export function withKneeGuard(adjust = {}, iso) {
+  if (iso < KNEE_GUARD.since) return adjust;
+  const banned = KNEE_GUARD.exercises;
+  const keep = (blocks) => blocks?.map((b) => ({ ...b, exercises: b.exercises.filter((id) => !banned.includes(id)) }))
+    .filter((b) => b.exercises.length);
+  const out = { ...adjust, dropExercises: [...new Set([...(adjust.dropExercises || []), ...banned])] };
+  if (adjust.leadBlocks) out.leadBlocks = keep(adjust.leadBlocks);
+  if (adjust.extraBlocks) out.extraBlocks = keep(adjust.extraBlocks);
+  return out;
+}
+
 // Séance prévue un jour donné : remplacement ponctuel, sinon jour par défaut des séances du bloc.
 export function dayPlan(resolved, iso, { race } = {}) {
   const block = blockAt(resolved, iso);
@@ -141,8 +155,19 @@ export function dayPlan(resolved, iso, { race } = {}) {
     const s = sessionsOf(resolved, source).find((x) => Number(x.weekday) === wd && !x.scheduledOnly);
     sessionId = s ? s.id : null;
   }
+  const guarded = withKneeGuard(adjust, iso);
+  let note = entry?.note || null;
+  if (sessionId && guarded !== adjust) {
+    const def = sessionsOf(resolved, from).find((x) => x.id === sessionId);
+    const kept = (def?.blocks || []).filter((b) => !guarded.dropTypes?.includes(b.type));
+    const blocks = [...kept, ...(guarded.leadBlocks || []), ...(guarded.extraBlocks || [])];
+    if (def && !blocks.some((b) => b.exercises.some((id) => !guarded.dropExercises.includes(id)))) {
+      sessionId = null;
+      note = 'Genou : séance en pause jusqu\'au feu vert du coach course';
+    }
+  }
   return {
-    iso, block, week, source, from, sessionId, adjust, note: entry?.note || null, scheduled: !!entry,
+    iso, block, week, source, from, sessionId, adjust: guarded, note, scheduled: !!entry,
     ...legsFor(week, iso),
     hyrox: hyroxClassOn(iso, race),
   };

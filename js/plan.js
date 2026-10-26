@@ -37,7 +37,7 @@ export async function activeProgram(iso = todayISO()) {
 
 // Contexte figé dans le log au démarrage : la séance garde son bloc même si elle déborde sur le suivant.
 export function startContext(day, session, { planned = false } = {}) {
-  const adjust = { ...((planned ? day.adjust : day.week?.adjust) || {}), ...(session.adjust || {}) };
+  const adjust = cy.withKneeGuard({ ...((planned ? day.adjust : day.week?.adjust) || {}), ...(session.adjust || {}) }, day.iso);
   return {
     cycleId: (planned ? day.from : null) || session.source || day.source,
     blockId: day.block.id,

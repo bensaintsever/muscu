@@ -84,8 +84,19 @@ const anchor = (id, ex) => one(id, ex, 120, { cue: RENFO });
 const ss = (id, a, b, rest) => ({ id, type: 'superset', exercises: [a, b], ...(rest != null ? { rest } : {}) });
 const wallball = (id, rest = 90) => ({ id, type: 'interval', exercises: ['wallball-thruster'], holdSec: 20, rest });
 const session = (id, name, weekday, rest, blocks, more = {}) => ({ id, name, weekday, rest, blocks, ...more });
-// Genou gauche : pas de fentes, step-up ni thrusters (bloc intervalle wall ball) tant que le coach course n'a pas validé.
-const KNEE_SAFE = { dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'] };
+// Genou gauche, décidé avec le coach course le 26/10 : exercices retirés de tout le calendrier à partir du 27/10.
+// Une séance qui n'a plus rien disparaît, un défi qui porte sur l'un d'eux aussi.
+// On n'en retire un de la liste que sur feu vert explicite du coach course, un à la fois, dans cet ordre :
+// step-up poids du corps, step-up lesté, fentes, fentes bulgares et step-down, thrusters en dernier.
+export const KNEE_GUARD = {
+  since: '2026-10-27',
+  exercises: [
+    'step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc', 'presse',
+    'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100',
+  ],
+};
+// Jambes de la rampe : hip thrust et soulevé de terre roumain en tête, comme le 26/10.
+const KNEE_LEAD = { dropExercises: ['hip-thrust'], leadBlocks: [one('jx2', 'hip-thrust', 120), one('jx3', 'sdt-roumain', 90)] };
 const maison = (weekday) => session('wallball-maison', 'Wall balls maison', weekday, 90, [one('w1', 'wallball-reel')], { home: true });
 const chrono = (id, exId) => session(id, 'Wall balls, chrono', 6, 60, [one('c1', exId)], { home: true, scheduledOnly: true });
 
@@ -202,12 +213,9 @@ export const CYCLES = [
     start: '2026-11-23', end: '2026-12-20',
     weeks: [
       { index: 1, start: '2026-11-23', legs: 'aucune', note: 'Semaine après le semi : pas de jambes' },
-      // Décidé avec le coach course le 26/10 (genou gauche) : fentes, step-up et thrusters exclus par défaut,
-      // levés un par un seulement sur son feu vert. La rampe part de la dernière séance à pleine charge (06/10).
-      { index: 2, start: '2026-11-30', legs: 'normale', factor: 0.6, adjust: KNEE_SAFE,
-        note: 'Rampe jambes : 60 % des charges pleines (06/10). Genou : fentes, step-up et thrusters à réintroduire sur feu vert du coach course' },
-      { index: 3, start: '2026-12-07', legs: 'normale', factor: 0.8, adjust: KNEE_SAFE,
-        note: 'Rampe jambes : 80 % des charges pleines (06/10). Genou : fentes, step-up et thrusters à réintroduire sur feu vert du coach course' },
+      // La rampe part de la dernière séance à pleine charge (06/10). Exclusions genou : voir KNEE_GUARD.
+      { index: 2, start: '2026-11-30', legs: 'normale', factor: 0.6, note: 'Rampe jambes : 60 % des charges pleines (06/10)' },
+      { index: 3, start: '2026-12-07', legs: 'normale', factor: 0.8, note: 'Rampe jambes : 80 % des charges pleines (06/10)' },
       { index: 4, start: '2026-12-14', legs: 'normale', factor: 1, isChallenge: true },
     ],
     overrides: {
@@ -247,6 +255,10 @@ export const CYCLES = [
       { date: '2026-11-23', sessionId: null, note: 'Lendemain du semi : pas de jambes' },
       { date: '2026-11-26', sessionId: null, note: 'Cours Hyrox allégé ou sauté, à la sensation' },
       { date: '2026-11-28', sessionId: null, note: 'Wall balls maison à partir du 05/12' },
+      { date: '2026-11-30', sessionId: 'jambes', adjust: KNEE_LEAD,
+        note: 'Genou : sans fentes, presse ni thrusters, à réintroduire sur feu vert du coach course' },
+      { date: '2026-12-07', sessionId: 'jambes', adjust: KNEE_LEAD,
+        note: 'Genou : sans fentes, presse ni thrusters, à réintroduire sur feu vert du coach course' },
       { date: '2026-12-19', sessionId: 'wallball-chrono-50' },
     ],
     challenge: { tests: [

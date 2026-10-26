@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { PROGRAM, REFERENCE_LOGS } from '../js/program.js';
 import { CYCLES, EXERCISES } from '../js/cycles-data.js';
 import {
-  resolveCycles, dayPlan, nextPlanned, testsInWeek, testsForLog, nextChallenge, nextRace, evaluateTest, hyroxClassOn, blockAt,
+  resolveCycles, dayPlan, addDays, nextPlanned, testsInWeek, testsForLog, nextChallenge, nextRace, evaluateTest, hyroxClassOn, blockAt,
 } from '../js/cycles.js';
 import { buildProgram, splitEdits, applyAdjust } from '../js/layers.js';
 import { suggest } from '../js/progression.js';
@@ -147,9 +147,11 @@ test('défis : verdicts', () => {
   // Mini-défi du 09/10, référence en dur
   assert.equal(evaluateTest(t('b0-developpe'), { sets: [8, 7, 6, 5].map((r, i) => set('developpe-barre', 30, r, i)) }).status, 'success');
   // Chrono : la première mesure sert de référence, ensuite plus bas = mieux
+  // (le défi b3-wallball est en pause pour le genou : on teste le verdict sur un défi chrono construit)
+  const chrono = { kind: 'time', exerciseId: 'wallball-50' };
   const wb = { sets: [set('wallball-50', 0, 170)] };
-  assert.equal(evaluateTest(t('b3-wallball'), wb).status, 'reference');
-  assert.equal(evaluateTest(t('b3-wallball'), wb, { previousTimes: [180] }).status, 'success');
+  assert.equal(evaluateTest(chrono, wb).status, 'reference');
+  assert.equal(evaluateTest(chrono, wb, { previousTimes: [180] }).status, 'success');
 });
 
 // ---------- Programme par couches ----------
@@ -247,8 +249,8 @@ test('ajustements : rappel à 2 séries, reprise à 90 %, affûtage sans circuit
   assert.equal(aff.session.blocks.length, 2);
   assert.equal(aff.program.exercises['fentes-marchees'].sets, 2);
   const p4 = prog('b4-moteur');
-  const ch = applyAdjust(p4, sess(p4, 'jambes'), day('2027-01-18').adjust);
-  assert.equal(ch.session.blocks.at(-1).exercises[0], 'fentes-100m');
+  const ch = applyAdjust(p4, sess(p4, 'jambes'), { extraBlocks: [{ id: 'jx', type: 'single', exercises: ['farmer-carry'] }] });
+  assert.equal(ch.session.blocks.at(-1).id, 'jx');
   // Borrowed : le bloc Atlas liste les séances du bloc 1 reprises
   assert.deepEqual(prog('b2-atlas').sessions.filter((s) => s.borrowed).map((s) => [s.id, s.source]),
     [['epaule-bras', 'b1-derniere-charge'], ['pec-dos', 'b1-derniere-charge']]);
@@ -355,15 +357,37 @@ test('26/10 : jambes sans mouvement de genou (hip thrust, soulevé de terre roum
   assert.ok(!testsInWeek(R, '2026-10-26').some((t) => t.sessionId === 'jambes'));
 });
 
-test('rampe jambes 30/11 et 07/12 : fentes, step-up et thrusters exclus (genou)', () => {
+test('genou : rampe jambes 30/11 et 07/12 sans fentes, presse ni thrusters, hip thrust et SDT roumain en tête', () => {
   for (const [iso, factor] of [['2026-11-30', 0.6], ['2026-12-07', 0.8]]) {
     const d = day(iso);
     assert.equal(d.sessionId, 'jambes', iso);
     assert.equal(d.legFactor, factor, iso);
     const p = prog(d.source);
     const { session } = applyAdjust(p, sess(p, 'jambes'), d.adjust);
-    const ids = exIds(session);
-    for (const banned of ['fentes-marchees', 'step-up', 'wallball-thruster']) assert.ok(!ids.includes(banned), `${iso} ${banned}`);
-    for (const kept of ['leg-curl', 'mollet-presse', 'hip-thrust']) assert.ok(ids.includes(kept), `${iso} ${kept}`);
+    assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')),
+      ['hip-thrust', 'sdt-roumain', 'mollet-presse', 'leg-curl', 'farmer-carry'], iso);
   }
+});
+
+test('genou : wall balls, thrusters, fentes et presse en pause partout à partir du 27/10, défis compris', () => {
+  const banned = ['step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc',
+    'presse', 'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100'];
+  for (let iso = '2026-10-27'; iso <= '2027-03-01'; iso = addDays(iso, 1)) {
+    const d = day(iso);
+    if (!d.sessionId) continue;
+    const p = prog(d.from);
+    const s = p.sessions.find((x) => x.id === d.sessionId);
+    const ids = exIds(applyAdjust(p, s, d.adjust).session);
+    assert.ok(ids.length, `${iso} ${d.sessionId} vide`);
+    for (const id of banned) assert.ok(!ids.includes(id), `${iso} ${d.sessionId} ${id}`);
+  }
+  assert.equal(day('2026-12-05').sessionId, null, 'wall balls maison');
+  assert.equal(day('2026-12-19').sessionId, null, 'chrono 50 wall balls');
+  const ids = R.flatMap((b) => b.tests).map((t) => t.id);
+  for (const id of ['b3-fentes', 'b3-wallball', 'b4-fentes', 'b4-fentes-100', 'b4-wallball', 'b5-repetition', 'b5-wallball']) {
+    assert.ok(!ids.includes(id), id);
+  }
+  assert.ok(ids.includes('b1-traction') && ids.includes('b3-developpe'));
+  // Avant le 27/10 rien ne change
+  assert.ok(!day('2026-10-26').adjust.dropExercises.includes('presse'));
 });
