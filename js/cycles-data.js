@@ -210,7 +210,7 @@ export const CYCLES = [
       { date: '2026-11-13', sessionId: 'epaule-bras', from: 'b1-derniere-charge', adjust: { loadFactor: 0.9 }, note: 'Charges du bloc 1 moins 10 %, RIR 2-3' },
       { date: '2026-11-16', sessionId: null, note: 'Reprise du genou, pas de jambes avant le 30/11' },
       { date: '2026-11-18', sessionId: 'pec-dos', from: 'b1-derniere-charge' },
-      { date: '2026-11-20', sessionId: null, note: 'Repos, ou 15 min de mobilité épaules' },
+      { date: '2026-11-20', sessionId: 'epaule-bras', from: 'b1-derniere-charge' },
     ],
   },
   {
@@ -261,7 +261,7 @@ export const CYCLES = [
     schedule: [
       { date: '2026-11-23', sessionId: null, note: 'Reprise du genou, pas de jambes avant le 30/11' },
       { date: '2026-11-26', sessionId: null, note: 'Cours Hyrox allégé ou sauté, à la sensation' },
-      { date: '2026-11-28', sessionId: null, note: 'Wall balls maison à partir du 05/12' },
+      { date: '2026-11-28', sessionId: null, note: 'Wall balls en pause jusqu\'à l\'avis du kiné' },
       { date: '2026-11-30', sessionId: 'jambes',
         adjust: { ...LEG_RAMP, loads: { 'hip-thrust': 45, 'sdt-roumain': 24, 'leg-curl': 55, 'mollet-presse': 140 } },
         note: `${RAMP_NOTE} Seulement si le genou est resté silencieux et si le kiné ne dit pas le contraire, sinon 60 %` },

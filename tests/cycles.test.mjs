@@ -82,6 +82,7 @@ test('Maroc, pas de jambes avant le 30/11, Pec/Dos normal le 18/11, Noël', () =
   const d13 = day('2026-11-13');
   assert.deepEqual([d13.sessionId, d13.from, d13.adjust.loadFactor], ['epaule-bras', 'b1-derniere-charge', 0.9]);
   assert.deepEqual([day('2026-11-18').sessionId, day('2026-11-18').from, day('2026-11-18').adjust.sets, day('2026-11-18').note], ['pec-dos', 'b1-derniere-charge', undefined, null]);
+  assert.deepEqual([day('2026-11-20').sessionId, day('2026-11-20').from, day('2026-11-20').adjust.loadFactor], ['epaule-bras', 'b1-derniere-charge', undefined]);
   assert.equal(day('2026-11-16').sessionId, null);
   assert.equal(day('2026-11-16').weekType, 'aucune');
   assert.equal(day('2026-11-23').sessionId, null);
