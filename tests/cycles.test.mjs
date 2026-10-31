@@ -91,8 +91,8 @@ test('Maroc, semaine du semi, Noël', () => {
 });
 
 test('après le semi : rampe jambes du bloc Fondations (weeks[].factor), pas weekInfo', () => {
-  assert.deepEqual([day('2026-11-30').weekType, day('2026-11-30').legFactor], ['normale', 0.6]);
-  assert.equal(day('2026-12-07').legFactor, 0.8);
+  assert.deepEqual([day('2026-11-30').weekType, day('2026-11-30').legFactor], ['normale', 0.8]);
+  assert.equal(day('2026-12-07').legFactor, 0.85);
   assert.equal(day('2026-12-14').legFactor, undefined);
   assert.equal(day('2026-11-25').weekType, 'aucune');
 });
@@ -358,7 +358,7 @@ test('26/10 : jambes sans mouvement de genou (hip thrust, soulevé de terre roum
 });
 
 test('genou : rampe jambes 30/11 et 07/12 sans fentes, presse ni thrusters, hip thrust et SDT roumain en tête', () => {
-  for (const [iso, factor] of [['2026-11-30', 0.6], ['2026-12-07', 0.8]]) {
+  for (const [iso, factor] of [['2026-11-30', 0.8], ['2026-12-07', 0.85]]) {
     const d = day(iso);
     assert.equal(d.sessionId, 'jambes', iso);
     assert.equal(d.legFactor, factor, iso);
@@ -390,4 +390,20 @@ test('genou : wall balls, thrusters, fentes et presse en pause partout à partir
   assert.ok(ids.includes('b1-traction') && ids.includes('b3-developpe'));
   // Avant le 27/10 rien ne change
   assert.ok(!day('2026-10-26').adjust.dropExercises.includes('presse'));
+});
+
+test('rampe jambes : 80 % le 30/11, 85 % le 07/12, 3 séries, conditions du coach dans la note', () => {
+  const d30 = day('2026-11-30');
+  const d07 = day('2026-12-07');
+  assert.equal(d30.legFactor, 0.8);
+  assert.equal(d07.legFactor, 0.85);
+  assert.equal(d30.adjust.sets, 3);
+  assert.equal(d07.adjust.sets, 3);
+  assert.match(d30.note, /kiné/);
+  assert.match(d07.note, /48 h/);
+  const load = (id, f) => suggest({ ...PROGRAM.exercises[id] }, [{ date: '2026-10-06', weekType: 'lourde', sets: [{ load: id === 'leg-curl' ? 65 : 170, reps: 10 }] }], 'normale', { legFactor: f }).load;
+  assert.equal(load('leg-curl', 0.8), 50);
+  assert.equal(load('mollet-presse', 0.8), 130);
+  assert.equal(load('leg-curl', 0.85), 55);
+  assert.equal(load('mollet-presse', 0.85), 140);
 });

@@ -213,9 +213,10 @@ export const CYCLES = [
     start: '2026-11-23', end: '2026-12-20',
     weeks: [
       { index: 1, start: '2026-11-23', legs: 'aucune', note: 'Semaine après le semi : pas de jambes' },
-      // La rampe part de la dernière séance à pleine charge (06/10). Exclusions genou : voir KNEE_GUARD.
-      { index: 2, start: '2026-11-30', legs: 'normale', factor: 0.6, note: 'Rampe jambes : 60 % des charges pleines (06/10)' },
-      { index: 3, start: '2026-12-07', legs: 'normale', factor: 0.8, note: 'Rampe jambes : 80 % des charges pleines (06/10)' },
+      // Rampe sur les charges pleines du 06/10, décidée avec le coach course : 80 % retrouve les charges du 26/10.
+      // Repli : 60 % si le genou parle ou si le kiné le demande. Exclusions genou : voir KNEE_GUARD.
+      { index: 2, start: '2026-11-30', legs: 'normale', factor: 0.8, note: 'Rampe jambes : 80 % des charges pleines (06/10)' },
+      { index: 3, start: '2026-12-07', legs: 'normale', factor: 0.85, note: 'Rampe jambes : 85 % des charges pleines (06/10)' },
       { index: 4, start: '2026-12-14', legs: 'normale', factor: 1, isChallenge: true },
     ],
     overrides: {
@@ -255,10 +256,10 @@ export const CYCLES = [
       { date: '2026-11-23', sessionId: null, note: 'Lendemain du semi : pas de jambes' },
       { date: '2026-11-26', sessionId: null, note: 'Cours Hyrox allégé ou sauté, à la sensation' },
       { date: '2026-11-28', sessionId: null, note: 'Wall balls maison à partir du 05/12' },
-      { date: '2026-11-30', sessionId: 'jambes', adjust: KNEE_LEAD,
-        note: 'Genou : sans fentes, presse ni thrusters, à réintroduire sur feu vert du coach course' },
-      { date: '2026-12-07', sessionId: 'jambes', adjust: KNEE_LEAD,
-        note: 'Genou : sans fentes, presse ni thrusters, à réintroduire sur feu vert du coach course' },
+      { date: '2026-11-30', sessionId: 'jambes', adjust: { ...KNEE_LEAD, sets: 3 },
+        note: 'Sans fentes, presse ni thrusters. 3 reps en réserve, jamais à l\'échec. Seulement si le genou est resté silencieux et si le kiné ne dit pas le contraire, sinon 60 %' },
+      { date: '2026-12-07', sessionId: 'jambes', adjust: { ...KNEE_LEAD, sets: 3 },
+        note: 'Sans fentes, presse ni thrusters. 3 reps en réserve, jamais à l\'échec. Si courbature de plus de 48 h après le 30/11 : rester à 80 % et prévenir le coach course' },
       { date: '2026-12-19', sessionId: 'wallball-chrono-50' },
     ],
     challenge: { tests: [
