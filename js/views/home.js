@@ -75,9 +75,9 @@ export async function renderHome(root, { live, ctx }) {
     </button>`;
   };
 
-  const semiWeek = iso <= cy.semiDate() ? prog.weekInfo(iso) : null;
-  const weekLabel = semiWeek?.week || (day.week?.label ?? '');
-  const note = plan.override ? '' : (semiWeek?.note || day.week?.note || '');
+  const legWeek = iso <= cy.legPlanEnd() ? prog.weekInfo(iso) : null;
+  const weekLabel = legWeek?.week || (day.week?.label ?? '');
+  const note = plan.override ? '' : (legWeek?.note || day.week?.note || '');
 
   root.className = 'view';
   root.innerHTML = `

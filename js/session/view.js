@@ -23,7 +23,7 @@ export async function renderSession(root, { live, ctx, setCleanup }) {
   if (!session) throw new Error(`Séance « ${log.sessionId} » introuvable dans le programme`);
   log.sets = log.sets || [];
   // Facteurs du jour figés au démarrage : rampe jambes, reprise à 90 %, etc.
-  const factors = { legFactor: log.legFactor, loadFactor: log.adjust?.loadFactor };
+  const factors = { legFactor: log.legFactor, loadFactor: log.adjust?.loadFactor, loads: log.adjust?.loads };
   const exIds = [...new Set(session.blocks.flatMap((b) => b.exercises))];
   let tests = [];
   try { tests = await Promise.all(testsForLog(plan.resolved, log, exIds).map(async (t) => ({ test: t, ref: await plans.refText(t) }))); } catch (e) { console.error(e); }

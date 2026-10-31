@@ -2,12 +2,12 @@
 // Données seules. Les dates des blocs Moteur et Duo sont calculées par resolveCycles (cycles.js).
 
 export const CYCLES_DEFAULTS = {
-  semiDate: '2026-11-22',
+  legPlanEnd: '2026-11-22', // fin du calendrier jambes par semaines (weekInfo)
   hyroxDate: '2027-02-13', // provisoire tant que le réglage kv 'hyroxDate' est vide
   moteurStart: '2027-01-04',
 };
 
-// Cours Hyrox : le jeudi, sauf exceptions. Pas de cours du 23/10 au 22/11 (le 22/10 est le dernier avant le semi).
+// Cours Hyrox : le jeudi, sauf exceptions. Pas de cours du 23/10 au 22/11 (genou), reprise à confirmer avec le coach course.
 export const HYROX_CLASS = {
   weekday: 4,
   extra: ['2026-10-12'],
@@ -95,8 +95,16 @@ export const KNEE_GUARD = {
     'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100',
   ],
 };
-// Jambes de la rampe : hip thrust et soulevé de terre roumain en tête, comme le 26/10.
-const KNEE_LEAD = { dropExercises: ['hip-thrust'], leadBlocks: [one('jx2', 'hip-thrust', 120), one('jx3', 'sdt-roumain', 90)] };
+// Reprise des jambes, décidée avec le coach course le 31/10 : hip thrust et soulevé de terre roumain en tête,
+// comme le 26/10, charges pilotées par les reps. Au-dessus de la fourchette en dernière série : un cran de plus.
+const RAMP_RULE = {
+  'hip-thrust': { repMin: 8, repMax: 12, increment: 5, raiseOnLast: true },
+  'sdt-roumain': { repMin: 8, repMax: 12, increment: 2, raiseOnLast: true },
+  'leg-curl': { repMin: 8, repMax: 12, increment: 5, raiseOnLast: true },
+  'mollet-presse': { repMin: 12, repMax: 15, increment: 5, raiseOnLast: true },
+};
+const LEG_RAMP = { dropExercises: ['hip-thrust'], leadBlocks: [one('jx2', 'hip-thrust', 120), one('jx3', 'sdt-roumain', 90)], sets: 3, exercises: RAMP_RULE };
+const RAMP_NOTE = 'Sans fentes, presse ni thrusters. 8-12 reps (mollets 12-15), 2-3 reps en réserve, jamais à l\'échec.';
 const maison = (weekday) => session('wallball-maison', 'Wall balls maison', weekday, 90, [one('w1', 'wallball-reel')], { home: true });
 const chrono = (id, exId) => session(id, 'Wall balls, chrono', 6, 60, [one('c1', exId)], { home: true, scheduledOnly: true });
 
@@ -122,7 +130,7 @@ export const CYCLES = [
   },
   {
     id: 'b1-derniere-charge', name: 'Dernière charge',
-    intent: 'Finir la prépa semi proprement, remettre le développé en mouvement.',
+    intent: 'Garder le haut du corps en charge, remettre le développé en mouvement.',
     start: '2026-10-12', end: '2026-11-01',
     weeks: [
       { index: 1, start: '2026-10-12', label: 'S13', legs: 'moyenne' },
@@ -138,9 +146,9 @@ export const CYCLES = [
         note: 'Seulement si le genou est silencieux ce matin, sinon renfo fessier complet. 2 séries à ~80 %, 3 reps en réserve, jamais à l\'échec (longue dimanche)',
         adjust: { loadFactor: 0.94, sets: 2, dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'],
           leadBlocks: [one('jx2', 'hip-thrust', 120)] } }, // presse écartée (genou fléchi sous charge), maintien retiré (épaules)
-      { date: '2026-10-22', sessionId: null, note: 'Dernier cours Hyrox avant le semi' },
+      { date: '2026-10-22', sessionId: null, note: 'Dernier cours Hyrox avant la pause' },
       // Décidé avec le coach course le 26/10 (genou gauche, reprise de la course en cours) : dernière séance
-      // jambes avant le semi, sans mouvement de descente/montée. Semaine lourde (100 %) × 0,8 ≈ 80 %.
+      // jambes avant la pause, sans mouvement de descente/montée. Semaine lourde (100 %) × 0,8 ≈ 80 %.
       { date: '2026-10-26', sessionId: 'jambes',
         note: 'Sans fentes, step-up ni thrusters (genou). 3 séries à ~80 %, 3 reps en réserve, jamais à l\'échec : test de course demain. Si le genou parle : renfo fessier complet à la place',
         adjust: { loadFactor: 0.8, sets: 3, dropExercises: ['fentes-marchees', 'step-up'], dropTypes: ['interval'],
@@ -178,7 +186,7 @@ export const CYCLES = [
   },
   {
     id: 'b2-atlas', name: 'Atlas',
-    intent: 'Garder le haut du corps au Maroc, arriver frais au semi.',
+    intent: 'Garder le haut du corps au Maroc, laisser le genou récupérer.',
     start: '2026-11-02', end: '2026-11-22',
     weeks: [
       { index: 1, start: '2026-11-02', label: 'S16' },
@@ -200,23 +208,21 @@ export const CYCLES = [
       { date: '2026-11-09', sessionId: 'atlas-a', note: 'Test pompes : 1 série au maximum' },
       { date: '2026-11-11', sessionId: null, note: 'Voyage retour' },
       { date: '2026-11-13', sessionId: 'epaule-bras', from: 'b1-derniere-charge', adjust: { loadFactor: 0.9 }, note: 'Charges du bloc 1 moins 10 %, RIR 2-3' },
-      { date: '2026-11-16', sessionId: null, note: 'Semaine du semi : pas de jambes, pas de cours Hyrox' },
-      { date: '2026-11-18', sessionId: 'pec-dos', from: 'b1-derniere-charge', adjust: { sets: 2 }, note: 'Rappel : 2 séries par exercice, RIR 3-4, rien au max' },
+      { date: '2026-11-16', sessionId: null, note: 'Reprise du genou, pas de jambes avant le 30/11' },
+      { date: '2026-11-18', sessionId: 'pec-dos', from: 'b1-derniere-charge' },
       { date: '2026-11-20', sessionId: null, note: 'Repos, ou 15 min de mobilité épaules' },
-      { date: '2026-11-22', sessionId: null, note: 'Semi' },
     ],
-    challenge: { tests: [{ id: 'b2-semi', date: '2026-11-22', kind: 'event', label: 'Semi' }] },
   },
   {
     id: 'b3-fondations', name: 'Fondations',
-    intent: 'La course descend, la barre remonte. Retrouver les charges, poser les bases Hyrox.',
+    intent: 'Le genou d\'abord, la barre remonte. Retrouver les charges, poser les bases Hyrox.',
     start: '2026-11-23', end: '2026-12-20',
     weeks: [
-      { index: 1, start: '2026-11-23', legs: 'aucune', note: 'Semaine après le semi : pas de jambes' },
-      // Rampe sur les charges pleines du 06/10, décidée avec le coach course : 80 % retrouve les charges du 26/10.
-      // Repli : 60 % si le genou parle ou si le kiné le demande. Exclusions genou : voir KNEE_GUARD.
-      { index: 2, start: '2026-11-30', legs: 'normale', factor: 0.8, note: 'Rampe jambes : 80 % des charges pleines (06/10)' },
-      { index: 3, start: '2026-12-07', legs: 'normale', factor: 0.85, note: 'Rampe jambes : 85 % des charges pleines (06/10)' },
+      { index: 1, start: '2026-11-23', legs: 'aucune', note: 'Reprise du genou, pas de jambes avant le 30/11' },
+      // Reprise pilotée par les reps (voir RAMP_RULE). Repli : 60 % si le genou parle ou si le kiné le demande.
+      // Exclusions genou : voir KNEE_GUARD.
+      { index: 2, start: '2026-11-30', legs: 'normale', note: 'Reprise des jambes : charges de départ fixées, 8-12 reps' },
+      { index: 3, start: '2026-12-07', legs: 'normale', note: 'Reprise des jambes : charges décidées par les reps du 30/11' },
       { index: 4, start: '2026-12-14', legs: 'normale', factor: 1, isChallenge: true },
     ],
     overrides: {
@@ -253,13 +259,14 @@ export const CYCLES = [
       chrono('wallball-chrono-50', 'wallball-50'),
     ],
     schedule: [
-      { date: '2026-11-23', sessionId: null, note: 'Lendemain du semi : pas de jambes' },
+      { date: '2026-11-23', sessionId: null, note: 'Reprise du genou, pas de jambes avant le 30/11' },
       { date: '2026-11-26', sessionId: null, note: 'Cours Hyrox allégé ou sauté, à la sensation' },
       { date: '2026-11-28', sessionId: null, note: 'Wall balls maison à partir du 05/12' },
-      { date: '2026-11-30', sessionId: 'jambes', adjust: { ...KNEE_LEAD, sets: 3 },
-        note: 'Sans fentes, presse ni thrusters. 3 reps en réserve, jamais à l\'échec. Seulement si le genou est resté silencieux et si le kiné ne dit pas le contraire, sinon 60 %' },
-      { date: '2026-12-07', sessionId: 'jambes', adjust: { ...KNEE_LEAD, sets: 3 },
-        note: 'Sans fentes, presse ni thrusters. 3 reps en réserve, jamais à l\'échec. Si courbature de plus de 48 h après le 30/11 : rester à 80 % et prévenir le coach course' },
+      { date: '2026-11-30', sessionId: 'jambes',
+        adjust: { ...LEG_RAMP, loads: { 'hip-thrust': 45, 'sdt-roumain': 24, 'leg-curl': 55, 'mollet-presse': 140 } },
+        note: `${RAMP_NOTE} Seulement si le genou est resté silencieux et si le kiné ne dit pas le contraire, sinon 60 %` },
+      { date: '2026-12-07', sessionId: 'jambes', adjust: LEG_RAMP,
+        note: `${RAMP_NOTE} Charge montée d'un cran si la dernière série du 30/11 a dépassé la fourchette. Si courbature de plus de 48 h après le 30/11 : garder les charges du 30/11 et prévenir le coach course` },
       { date: '2026-12-19', sessionId: 'wallball-chrono-50' },
     ],
     challenge: { tests: [

@@ -2,7 +2,7 @@
 import * as plans from './plan.js';
 import { todayISO } from './clock.js';
 import { hyroxSection } from './settings-cycles.js';
-import { semiDate } from './cycles.js';
+import { legPlanEnd } from './cycles.js';
 
 const DAY = 86400000;
 
@@ -91,9 +91,9 @@ export async function renderSettings(container, ctx) {
   ]);
   // Info de semaine sans le forçage, pour l'afficher à côté
   const raw = { ...plans.dayOf({ ...plan, override: null }, todayISO()) };
-  const semi = ctx.prog.weekInfo(todayISO());
-  const inSemi = raw.iso <= semiDate();
-  const info = { type: raw.weekType, week: inSemi ? semi.week : null, note: inSemi ? semi.note : (raw.week?.note || '') };
+  const legWeek = ctx.prog.weekInfo(todayISO());
+  const inPlan = raw.iso <= legPlanEnd();
+  const info = { type: raw.weekType, week: inPlan ? legWeek.week : null, note: inPlan ? legWeek.note : (raw.week?.note || '') };
 
   // Sauvegarde en ligne chargée à part : si elle échoue, le reste des Réglages s'affiche quand même
   let cloud = null;
@@ -120,7 +120,7 @@ function weekSection(ctx, override, info) {
     status.replaceChildren(...[
       el('div', { class: 's-week-line' },
         el('span', { class: `chip ${ov || info.type}`, text: label(ov || info.type) }),
-        el('span', { class: 'muted', text: ov ? 'forcé' : (info.week ? `${info.week} du plan semi` : 'calendrier') }),
+        el('span', { class: 'muted', text: ov ? 'forcé' : (info.week ? `${info.week} du calendrier jambes` : 'calendrier') }),
       ),
       ov && ov !== info.type ? el('p', { class: 'muted s-small', text: `Le calendrier dit : ${label(info.type)}.` }) : null,
       !ov && info.note ? el('p', { class: 'muted s-small', text: info.note }) : null,

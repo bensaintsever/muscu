@@ -36,7 +36,7 @@ export const PROGRAM = {
     'pushdown-cable': { id: 'pushdown-cable', name: 'Tirage triceps vers le bas câble', sets: 3, repMin: 10, repMax: 15, increment: 2.5, loadType: 'cable', undulates: false, unit: 'kg' },
     'curl-marteau-cable': { id: 'curl-marteau-cable', name: 'Flexion avant-bras prise marteau câble', sets: 3, repMin: 10, repMax: 15, increment: 2.5, loadType: 'cable', undulates: false, unit: 'kg' },
 
-    // — Jambes (suit l'ondulation du plan semi) —
+    // — Jambes (ondulation lourde / moyenne / légère) —
     'fentes-marchees': { id: 'fentes-marchees', name: 'Fentes marchées lestées', sets: 3, repMin: 10, repMax: 14, increment: 4, loadType: 'dumbbell', undulates: true, unit: 'kg', note: 'Charge totale des deux haltères' },
     'step-up': { id: 'step-up', name: 'Step-up lesté haltères', sets: 4, repMin: 10, repMax: 14, increment: 2, loadType: 'dumbbell', undulates: true, unit: 'kg', note: 'Genou d\'appui qui ne rentre pas, bassin stable' },
     'leg-curl': { id: 'leg-curl', name: 'Leg curl assis', sets: 3, repMin: 8, repMax: 12, increment: 5, loadType: 'machine', undulates: true, unit: 'kg' },

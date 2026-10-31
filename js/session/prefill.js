@@ -1,5 +1,5 @@
 // Pré-remplissage des steppers. Fonctions pures, importables dans Node.
-import { roundLoad, findBase, loadFactorFor } from '../progression.js';
+import { roundLoad, findBase, loadFactorFor, lastSetAboveRange } from '../progression.js';
 
 // Reps visées par la suggestion pour cette série (target = résultat de suggest).
 export function targetReps(ex, target, setIdx) {
@@ -15,8 +15,11 @@ export function targetLoad(ex, target, history) {
 
 // Séance de référence pour le pré-remplissage : la dernière faite à pleine charge (même règle que
 // suggest), ramenée au facteur du jour (semaine moyenne/légère, rampe, reprise).
-// factors = { legFactor, loadFactor } du log.
+// factors = { legFactor, loadFactor, loads } du log. Une charge fixée (loads) ou la règle
+// de la reprise jambes (raiseOnLast) passent avant la séance précédente.
 export function lastSetPlan(ex, history, weekType, setIdx, factors = {}) {
+  const fixed = factors.loads?.[ex.id];
+  if (fixed != null) return { load: fixed, reps: ex.repMin };
   const hist = history || [];
   if (!hist.length) return null;
   const base = findBase(ex, hist);
@@ -25,6 +28,7 @@ export function lastSetPlan(ex, history, weekType, setIdx, factors = {}) {
   let load = ex.unit === 'reps' ? 0 : (Number(set.load) || 0);
   const f = loadFactorFor(ex, weekType, factors);
   if (f < 1 && load > 0) load = roundLoad(load * f, ex.increment);
+  if (lastSetAboveRange(ex, base)) return { load: load + ex.increment, reps: ex.repMin };
   return { load, reps: set.reps };
 }
 

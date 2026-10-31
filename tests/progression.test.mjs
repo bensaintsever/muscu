@@ -21,7 +21,7 @@ const entry = (date, weekType, load, reps) => ({
   logId: date, date, weekType, isReference: false, sets: reps.map((r) => ({ load, reps: r })),
 });
 
-test('weekInfo : calendrier du plan semi', () => {
+test('weekInfo : calendrier jambes', () => {
   assert.deepEqual(
     [weekInfo('2026-10-02').week, weekInfo('2026-10-02').type], ['S11', 'legere']);
   assert.deepEqual(
@@ -47,7 +47,7 @@ test('weekInfo : bornes, objet Date local et libellés', () => {
   assert.equal(weekInfo(new Date(2026, 9, 4, 0, 1)).week, 'S11');
   const info = weekInfo('2026-11-18');
   assert.equal(info.label, 'Pas de jambes');
-  assert.match(info.note, /semi/);
+  assert.match(info.note, /30\/11/);
   assert.equal(weekInfo('2026-10-02').label, WEEK_TYPES.legere.label);
 });
 

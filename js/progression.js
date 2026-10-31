@@ -9,7 +9,7 @@ export const WEEK_TYPES = {
   normale: { label: 'Normale', factor: 1 },
 };
 
-// S1 = lundi 20/07/2026. Le plan semi s'arrête à S18 (course le 22/11/2026).
+// S1 = lundi 20/07/2026. Le calendrier jambes par semaines s'arrête à S18 (22/11/2026).
 const PLAN_START = { y: 2026, m: 7, d: 20 };
 const LAST_PLAN_WEEK = 18;
 
@@ -23,7 +23,7 @@ const WEEK_SCHEDULE = {
 const WEEK_NOTES = {
   16: 'Pas de jambes cette semaine',
   17: 'Maroc, pas de jambes',
-  18: 'Semaine du semi, pas de jambes',
+  18: 'Reprise du genou, pas de jambes avant le 30/11',
 };
 
 const TYPE_NOTES = {
@@ -135,11 +135,22 @@ export function loadFactorFor(exercise, weekType, opts = {}) {
   return f;
 }
 
+// Règle de la reprise jambes (raiseOnLast) : la dernière série a dépassé le haut de la fourchette.
+export function lastSetAboveRange(exercise, base) {
+  return !!exercise.raiseOnLast && (Number(base?.sets?.at(-1)?.reps) || 0) > exercise.repMax;
+}
+
 export function suggest(exercise, history, weekType, opts = {}) {
   const { sets: count, repMin, repMax } = exercise;
   const increment = Number(exercise.increment) || 0;
   const repsOnly = exercise.unit === 'reps';
   const bodyweight = exercise.loadType === 'bodyweight';
+
+  // Charge de départ fixée pour la séance
+  const fixed = opts.loads?.[exercise.id];
+  if (fixed != null) {
+    return { load: fixed, reps: fill(count, repMin), action: 'hold', reason: `Charge de reprise : ${fmtKg(fixed)}, ${repMin}-${repMax} reps` };
+  }
 
   const base = findBase(exercise, (history || []).filter((h) => h?.sets?.length));
 
@@ -192,7 +203,9 @@ export function suggest(exercise, history, weekType, opts = {}) {
     };
   }
 
-  const allAtMax = baseReps.length >= count && baseReps.slice(0, count).every((r) => r >= repMax);
+  const allAtMax = exercise.raiseOnLast
+    ? lastSetAboveRange(exercise, base)
+    : baseReps.length >= count && baseReps.slice(0, count).every((r) => r >= repMax);
 
   // Sans charge suivie (crunch), on ne peut que plafonner les reps.
   if (repsOnly) {
@@ -215,7 +228,8 @@ export function suggest(exercise, history, weekType, opts = {}) {
       action: 'increase',
       reason: bodyweight && baseLoad === 0
         ? `Toutes les séries à ${repMax} : ajoute ${fmtKg(increment)} de lest`
-        : `Toutes les séries à ${repMax} : on monte à ${fmtKg(load)}`,
+        : exercise.raiseOnLast ? `Dernière série au-dessus de ${repMax} : on monte à ${fmtKg(load)}`
+          : `Toutes les séries à ${repMax} : on monte à ${fmtKg(load)}`,
     };
   }
 

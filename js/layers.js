@@ -117,7 +117,8 @@ export function splitEdits({ edited, stored, edits = {}, cycles = CYCLES, source
   return { stored: nextStored, edits: nextEdits };
 }
 
-// Ajustements d'une séance précise : séries fixées, volume réduit, blocs ou exercices ajoutés / retirés, repos forcé.
+// Ajustements d'une séance précise : séries fixées, volume réduit, blocs ou exercices ajoutés / retirés, repos forcé,
+// format d'exercice propre à la séance (exercises).
 export function applyAdjust(program, session, adjust = {}) {
   const s = clone(session);
   const exercises = { ...program.exercises };
@@ -137,6 +138,7 @@ export function applyAdjust(program, session, adjust = {}) {
     if (!ex) continue;
     if (adjust.sets) exercises[id] = { ...ex, sets: adjust.sets };
     else if (adjust.volume) exercises[id] = { ...ex, sets: Math.max(1, Math.round(ex.sets * adjust.volume)) };
+    if (adjust.exercises?.[id]) exercises[id] = { ...exercises[id], ...adjust.exercises[id] };
   }
   return { program: { ...program, exercises }, session: s };
 }

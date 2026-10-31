@@ -105,11 +105,11 @@ function sessionsOf(resolved, sourceId) {
   return src.base ? PROGRAM.sessions : src.sessions || [];
 }
 
-export function semiDate() { return CYCLES_DEFAULTS.semiDate; }
+export function legPlanEnd() { return CYCLES_DEFAULTS.legPlanEnd; }
 
-// Type de semaine jambes : le plan semi (weekInfo) jusqu'au 22/11, puis la semaine du bloc.
+// Type de semaine jambes : le calendrier par semaines (weekInfo) jusqu'au 22/11, puis la semaine du bloc.
 export function legsFor(week, iso) {
-  if (iso <= CYCLES_DEFAULTS.semiDate) return { weekType: weekInfo(iso).type, legFactor: undefined };
+  if (iso <= CYCLES_DEFAULTS.legPlanEnd) return { weekType: weekInfo(iso).type, legFactor: undefined };
   return { weekType: week?.legs || 'normale', legFactor: week?.factor < 1 ? week.factor : undefined };
 }
 
@@ -195,7 +195,6 @@ export function nextChallenge(resolved, iso) {
 }
 
 export function nextRace(iso, race = CYCLES_DEFAULTS.hyroxDate) {
-  if (iso <= CYCLES_DEFAULTS.semiDate) return { name: 'Semi', date: CYCLES_DEFAULTS.semiDate, inDays: diffDays(iso, CYCLES_DEFAULTS.semiDate) };
   if (iso <= race) return { name: 'Hyrox', date: race, inDays: diffDays(iso, race) };
   return null;
 }

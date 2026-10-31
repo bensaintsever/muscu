@@ -6,13 +6,13 @@ Une app installable sur Pixel 8 Pro (Chrome Android) qui :
 1. guide la séance en cours (quel exo, quelle série, quelle charge viser, minuteur de repos) ;
 2. enregistre chaque série (charge, reps) sans friction, avec le pouce, entre deux séries ;
 3. montre où j'en suis : progression par exercice, historique des séances ;
-4. applique la règle du plan semi : la charge de la séance jambes ondule (lourde / moyenne / légère) jusqu'au semi du 22/11/2026.
+4. applique le calendrier jambes : la charge de la séance jambes ondule (lourde / moyenne / légère) jusqu'au 22/11/2026, puis reprise pilotée par les reps.
 
 ## Choix techniques
 
 - **PWA statique**, HTML + CSS + JS en modules ES, **aucune étape de build, aucune dépendance CDN** (doit marcher hors ligne en salle).
 - Données dans **IndexedDB** (local au téléphone) + `navigator.storage.persist()` + **export/import JSON** + **sauvegarde en ligne Supabase** facultative (voir la section dédiée).
-- Hébergement visé : GitHub Pages (comme l'app du semi). À décider en fin de projet.
+- Hébergement : GitHub Pages.
 - Thème sombre, gros boutons (usage à une main, mains moites), viewport 412 px de large (Pixel 8 Pro).
 - Minuteur de repos : basé sur un timestamp de fin (survit à la mise en veille / changement d'onglet), vibration + bip à la fin, Wake Lock pour garder l'écran allumé pendant la séance.
 - Une séance en cours est sauvegardée à chaque série validée : si l'app est tuée, on reprend où on en était.
@@ -138,11 +138,11 @@ Réglages connus : `weekTypeOverride` (null ou un type), `soundOn` (bool, défau
 ## Contrat `js/progression.js` (pur, sans DOM ni IndexedDB, export nommé)
 
 - `WEEK_TYPES` : `{ lourde: {label:'Lourde', factor:1}, moyenne: {label:'Moyenne', factor:0.85}, legere: {label:'Légère', factor:0.6}, aucune: {label:'Pas de jambes', factor:0}, normale: {label:'Normale', factor:1} }`
-- `weekInfo(date)` → `{ week: 'S12' | null, type, label, note }` d'après le calendrier du plan semi (S1 = lundi 20/07/2026, S6 = 24/08) :
+- `weekInfo(date)` → `{ week: 'S12' | null, type, label, note }` d'après le calendrier jambes (S1 = lundi 20/07/2026, S6 = 24/08) :
   - lourde : S5, S6, S9, S12, S15 ; moyenne : S7, S10, S13 ; légère : S8, S11, S14 ;
-  - aucune : S16, S17 (Maroc), S18 (semaine du semi, course le 22/11) ;
+  - aucune : S16, S17 (Maroc), S18 (reprise du genou) ;
   - à partir du lundi 23/11/2026 et avant S5 : `normale`.
-  - `note` : une phrase courte (ex. « Semaine du semi, pas de jambes »).
+  - `note` : une phrase courte (ex. « Reprise du genou, pas de jambes avant le 30/11 »).
 - `sessionForDate(date, program)` → id de séance dont `weekday` correspond, sinon `null`.
 - `roundLoad(load, increment)` → arrondi au pas inférieur le plus proche (jamais au-dessus).
 - `e1rm(load, reps)` → Epley `load * (1 + reps / 30)`, 0 si load = 0.
@@ -171,7 +171,7 @@ Navigation basse : Accueil · Historique · Progression · Réglages (masquée p
 Contenu : `CYCLES.md` (fait foi). Code : `js/cycles-data.js` + `js/cycles.js` + `js/layers.js` + `js/plan.js`.
 
 - **Le programme actif dépend de la date.** `resolveCycles(CYCLES, { hyroxDate })` calcule les dates de tous les blocs ; Moteur et Duo sont calés à rebours sur la date du Hyrox (réglage `hyroxDate`, provisoire 13/02/2027). `dayPlan(resolved, date)` donne le bloc, la semaine, la séance prévue (remplacement ponctuel `schedule` d'abord, sinon jour par défaut des séances du bloc), le type de semaine jambes et les ajustements du jour.
-- **Avant le 12/10**, le bloc actif est « Programme actuel » (`base: true`) : le programme enregistré, tel quel. Jusqu'au 22/11, la séance jambes est celle du programme enregistré (`fromBase`) et le type de semaine vient de `weekInfo()` (ondulation inchangée). Après le semi : `weeks[].legs` et `weeks[].factor` (rampe du bloc Fondations).
+- **Avant le 12/10**, le bloc actif est « Programme actuel » (`base: true`) : le programme enregistré, tel quel. Jusqu'au 22/11, la séance jambes est celle du programme enregistré (`fromBase`) et le type de semaine vient de `weekInfo()` (ondulation inchangée). Ensuite : `weeks[].legs` et `weeks[].factor`. Reprise des jambes des 30/11 et 07/12 : `adjust.loads` (charges de départ) et `adjust.exercises` (fourchette, pas, `raiseOnLast` : un cran de plus si la dernière série dépasse le haut de la fourchette).
 - **Ids stables.** Les séances équivalentes gardent `pec-dos`, `epaule-bras`, `jambes` ; les ancres gardent leur id d'exercice (historique, graphes, pré-remplissage continus). Les nouveaux exercices ont un id fixe dans `EXERCISES`.
 - **Réglages par couches** (`layers.js`), du plus faible au plus fort : catalogue (`program.js` + `EXERCISES`) → programme enregistré (`kv 'program'`, réglages globaux : nom, pas, note, séries… d'un exercice, valables dans tous les blocs) → format du bloc (`overrides`, ex. traction 4 × 6-8 au bloc 1) → retouches faites pendant ce bloc (`kv 'cycleEdits'[blocId]`). Repos d'un bloc de séance : retouche du bloc > repos prescrit par le cycle > repos réglé à la main sur le même groupe d'exercices dans le programme enregistré > repos de la séance. À l'enregistrement, `splitEdits` range chaque champ modifié : champ fixé par le format du bloc ou repos → retouches du bloc ; sinon → programme enregistré. Avant le 12/10 et pour la séance jambes reprise, tout va dans le programme enregistré, comme avant.
 - **Pas de migration de données** : le programme enregistré et les logs existants sont lus tels quels (aucun champ ne change de sens). Un log sans `cycleId` (fait avant la mise à jour) est rattaché au bloc de sa date, donc au « Programme actuel ». Les tests de `tests/cycles.test.mjs` vérifient qu'un programme modifié à la main reste appliqué et n'est jamais réécrit par la lecture.
