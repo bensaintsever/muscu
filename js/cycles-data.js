@@ -12,7 +12,7 @@ export const HYROX_CLASS = {
   weekday: 4,
   extra: ['2026-10-12'],
   skip: ['2026-10-15'],
-  pauses: [['2026-10-23', '2026-11-22'], ['2026-12-21', '2026-12-27']],
+  pauses: [['2026-10-23', '2026-11-11'], ['2026-12-21', '2026-12-27']],
   minDaysBeforeRace: 3,
 };
 
@@ -207,6 +207,7 @@ export const CYCLES = [
       { date: '2026-11-06', sessionId: 'atlas-b', note: 'Maroc' },
       { date: '2026-11-09', sessionId: 'atlas-a', note: 'Test pompes : 1 série au maximum' },
       { date: '2026-11-11', sessionId: null, note: 'Voyage retour' },
+      { date: '2026-11-12', sessionId: null, note: 'Cours Hyrox adapté, à la place de la sortie de course : sans wall balls, thrusters, fentes, burpees broad jump, sled push lourd, rameur ni course. Arrêt à la première sensation au genou' },
       { date: '2026-11-13', sessionId: 'epaule-bras', from: 'b1-derniere-charge', adjust: { loadFactor: 0.9 }, note: 'Charges du bloc 1 moins 10 %, RIR 2-3' },
       { date: '2026-11-16', sessionId: null, note: 'Reprise du genou, pas de jambes avant le 30/11' },
       { date: '2026-11-18', sessionId: 'pec-dos', from: 'b1-derniere-charge' },

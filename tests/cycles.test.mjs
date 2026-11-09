@@ -68,10 +68,13 @@ test('schedule S13 : Hyrox lundi 12/10 sans jambes, jambes moyenne décalées au
   assert.equal(nextPlanned(R, '2026-10-12').sessionId, 'pec-dos');
 });
 
-test('cours Hyrox : dernier le 22/10, aucun jusqu\'au 22/11, reprise le jeudi', () => {
+test('cours Hyrox : dernier le 22/10, pause jusqu\'au 11/11, reprise adaptée le 12/11', () => {
   assert.ok(hyroxClassOn('2026-10-22'));
   assert.equal(hyroxClassOn('2026-10-29'), false);
-  assert.equal(hyroxClassOn('2026-11-19'), false);
+  assert.equal(hyroxClassOn('2026-11-05'), false);
+  assert.ok(hyroxClassOn('2026-11-12'));
+  assert.match(day('2026-11-12').note, /Cours Hyrox adapté.*sans wall balls, thrusters, fentes/);
+  assert.ok(hyroxClassOn('2026-11-19'));
   assert.ok(hyroxClassOn('2026-11-26'));
   assert.equal(hyroxClassOn('2027-02-11', '2027-02-13'), false); // 2 jours avant la course
 });
