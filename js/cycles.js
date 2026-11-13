@@ -123,12 +123,14 @@ export function hyroxClassOn(iso, race = CYCLES_DEFAULTS.hyroxDate) {
   return !(before >= 0 && before < h.minDaysBeforeRace);
 }
 
-const kneeBlocked = (iso, ids) => iso >= KNEE_GUARD.since && ids.some((id) => KNEE_GUARD.exercises.includes(id));
+// Exercices exclus ce jour-là : la liste de KNEE_GUARD moins ceux dont la levée (release) est passée.
+const bannedAt = (iso) => KNEE_GUARD.exercises.filter((id) => !(KNEE_GUARD.release?.[id] && iso >= KNEE_GUARD.release[id]));
+const kneeBlocked = (iso, ids) => iso >= KNEE_GUARD.since && ids.some((id) => bannedAt(iso).includes(id));
 
 // Ajoute les exclusions genou à un ajustement, blocs ajoutés compris (sans effet avant KNEE_GUARD.since).
 export function withKneeGuard(adjust = {}, iso) {
   if (iso < KNEE_GUARD.since) return adjust;
-  const banned = KNEE_GUARD.exercises;
+  const banned = bannedAt(iso);
   const keep = (blocks) => blocks?.map((b) => ({ ...b, exercises: b.exercises.filter((id) => !banned.includes(id)) }))
     .filter((b) => b.exercises.length);
   const out = { ...adjust, dropExercises: [...new Set([...(adjust.dropExercises || []), ...banned])] };

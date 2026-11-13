@@ -79,16 +79,16 @@ test('cours Hyrox : dernier le 22/10, pause jusqu\'au 11/11, reprise adaptée le
   assert.equal(hyroxClassOn('2027-02-11', '2027-02-13'), false); // 2 jours avant la course
 });
 
-test('Maroc, pas de jambes avant le 30/11, Pec/Dos normal le 18/11, Noël', () => {
+test('Maroc, jambes reprises le 16/11, Pec/Dos normal le 18/11, Noël', () => {
   assert.equal(day('2026-11-04').sessionId, 'atlas-a');
   assert.equal(day('2026-11-11').sessionId, null);
   const d13 = day('2026-11-13');
   assert.deepEqual([d13.sessionId, d13.from, d13.adjust.loadFactor], ['epaule-bras', 'b1-derniere-charge', 0.9]);
   assert.deepEqual([day('2026-11-18').sessionId, day('2026-11-18').from, day('2026-11-18').adjust.sets, day('2026-11-18').note], ['pec-dos', 'b1-derniere-charge', undefined, null]);
   assert.deepEqual([day('2026-11-20').sessionId, day('2026-11-20').from, day('2026-11-20').adjust.loadFactor], ['epaule-bras', 'b1-derniere-charge', undefined]);
-  assert.equal(day('2026-11-16').sessionId, null);
-  assert.equal(day('2026-11-16').weekType, 'aucune');
-  assert.equal(day('2026-11-23').sessionId, null);
+  assert.equal(day('2026-11-16').sessionId, 'jambes');
+  assert.equal(day('2026-11-16').weekType, 'normale');
+  assert.equal(day('2026-11-23').sessionId, 'jambes');
   assert.equal(day('2026-12-23').sessionId, 'treve-a');
   const d28 = day('2026-12-28');
   assert.deepEqual([d28.sessionId, d28.source, d28.adjust.loadFactor], ['jambes', 'b3-fondations', 0.9]);
@@ -98,7 +98,7 @@ test('après le 22/11 : semaines du bloc Fondations, plus de weekInfo, plus de p
   assert.deepEqual([day('2026-11-30').weekType, day('2026-11-30').legFactor], ['normale', undefined]);
   assert.equal(day('2026-12-07').legFactor, undefined);
   assert.equal(day('2026-12-14').legFactor, undefined);
-  assert.equal(day('2026-11-25').weekType, 'aucune');
+  assert.equal(day('2026-11-25').weekType, 'normale');
 });
 
 // ---------- Recalcul à rebours ----------
@@ -361,18 +361,18 @@ test('26/10 : jambes sans mouvement de genou (hip thrust, soulevé de terre roum
   assert.ok(!testsInWeek(R, '2026-10-26').some((t) => t.sessionId === 'jambes'));
 });
 
-test('genou : rampe jambes 30/11 et 07/12 sans fentes, presse ni thrusters, hip thrust et SDT roumain en tête', () => {
-  for (const iso of ['2026-11-30', '2026-12-07']) {
+test('genou : rampe jambes dès le 16/11 sans fentes ni thrusters, presse légère, hip thrust et SDT roumain en tête', () => {
+  for (const iso of ['2026-11-16', '2026-11-23', '2026-11-30', '2026-12-07']) {
     const d = day(iso);
     assert.equal(d.sessionId, 'jambes', iso);
-    const p = prog(d.source);
+    const p = prog(d.from);
     const { session } = applyAdjust(p, sess(p, 'jambes'), d.adjust);
     assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')),
-      ['hip-thrust', 'sdt-roumain', 'mollet-presse', 'leg-curl', 'farmer-carry'], iso);
+      ['hip-thrust', 'sdt-roumain', 'presse+mollet-presse', 'leg-curl', 'farmer-carry'], iso);
   }
 });
 
-test('genou : wall balls, thrusters, fentes et presse en pause partout à partir du 27/10, défis compris', () => {
+test('genou : wall balls, thrusters et fentes en pause partout à partir du 27/10 (presse levée le 16/11), défis compris', () => {
   const banned = ['step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc',
     'presse', 'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100'];
   for (let iso = '2026-10-27'; iso <= '2027-03-01'; iso = addDays(iso, 1)) {
@@ -382,7 +382,10 @@ test('genou : wall balls, thrusters, fentes et presse en pause partout à partir
     const s = p.sessions.find((x) => x.id === d.sessionId);
     const ids = exIds(applyAdjust(p, s, d.adjust).session);
     assert.ok(ids.length, `${iso} ${d.sessionId} vide`);
-    for (const id of banned) assert.ok(!ids.includes(id), `${iso} ${d.sessionId} ${id}`);
+    for (const id of banned) {
+      if (id === 'presse' && iso >= '2026-11-16') continue; // levée par le kiné le 13/11
+      assert.ok(!ids.includes(id), `${iso} ${d.sessionId} ${id}`);
+    }
   }
   assert.equal(day('2026-12-05').sessionId, null, 'wall balls maison');
   assert.equal(day('2026-12-19').sessionId, null, 'chrono 50 wall balls');
@@ -395,19 +398,19 @@ test('genou : wall balls, thrusters, fentes et presse en pause partout à partir
   assert.ok(!day('2026-10-26').adjust.dropExercises.includes('presse'));
 });
 
-test('reprise jambes : charges de départ le 30/11, puis les reps décident le 07/12, 14/12 dans la continuité', () => {
-  const d30 = day('2026-11-30');
-  const d07 = day('2026-12-07');
+test('reprise jambes : charges de départ le 16/11, puis les reps décident le 23/11, la suite dans la continuité', () => {
+  const d30 = day('2026-11-16');
+  const d07 = day('2026-11-23');
   assert.match(d30.note, /kiné/);
   assert.match(d07.note, /48 h/);
-  const adjusted = (d) => { const p = prog(d.source); return applyAdjust(p, sess(p, 'jambes'), d.adjust).program; };
+  const adjusted = (d) => { const p = prog(d.from); return applyAdjust(p, sess(p, 'jambes'), d.adjust).program; };
   const p30 = adjusted(d30);
   const p07 = adjusted(d07);
   for (const id of ['hip-thrust', 'sdt-roumain', 'leg-curl', 'mollet-presse']) assert.equal(p30.exercises[id].sets, 3, id);
   assert.deepEqual([p30.exercises['mollet-presse'].repMin, p30.exercises['mollet-presse'].repMax], [12, 15]);
   assert.equal(p30.exercises['sdt-roumain'].repMax, 12);
 
-  // 30/11 : charges de départ, même avec un historique à 65 kg au leg curl
+  // 16/11 : charges de départ, même avec un historique à 65 kg au leg curl
   const full = { date: '2026-10-06', weekType: 'lourde', sets: [{ load: 65, reps: 10 }] };
   const factors = { loads: d30.adjust.loads };
   for (const [id, load] of [['hip-thrust', 45], ['sdt-roumain', 24], ['leg-curl', 55], ['mollet-presse', 140]]) {
@@ -416,8 +419,8 @@ test('reprise jambes : charges de départ le 30/11, puis les reps décident le 0
     assert.deepEqual(plannedInput({ exId: id, ex, setIdx: 0, history: [full], weekType: 'normale', factors }), { load, reps: ex.repMin }, id);
   }
 
-  // 07/12 : la dernière série du 30/11 décide, série par série identique sinon
-  const after = (load, reps) => [full, { date: '2026-11-30', weekType: 'normale', sets: reps.map((r) => ({ load, reps: r })) }];
+  // 23/11 : la dernière série du 16/11 décide, série par série identique sinon
+  const after = (load, reps) => [full, { date: '2026-11-16', weekType: 'normale', sets: reps.map((r) => ({ load, reps: r })) }];
   const curl = p07.exercises['leg-curl'];
   assert.equal(suggest(curl, after(55, [10, 11, 13]), 'normale').load, 60);
   assert.equal(plannedInput({ exId: 'leg-curl', ex: curl, setIdx: 0, history: after(55, [10, 11, 13]), weekType: 'normale' }).load, 60);
@@ -428,14 +431,14 @@ test('reprise jambes : charges de départ le 30/11, puis les reps décident le 0
   const mollets = p07.exercises['mollet-presse'];
   assert.equal(suggest(mollets, after(140, [15, 15, 16]), 'normale').load, 145);
 
-  // 14/12 : on repart du 07/12, pas de saut à 65 kg
-  const logs = [...after(55, [10, 11, 12]), { date: '2026-12-07', weekType: 'normale', sets: [{ load: 60, reps: 10 }] }];
+  // séances suivantes : on repart de la dernière séance, pas de saut à 65 kg
+  const logs = [...after(55, [10, 11, 12]), { date: '2026-11-23', weekType: 'normale', sets: [{ load: 60, reps: 10 }] }];
   assert.equal(suggest(prog('b3-fondations').exercises['leg-curl'], logs, 'normale').load, 60);
 });
 
 test('semi retiré : plus aucune mention dans les notes, intentions et défis', () => {
   assert.ok(!/semi/i.test(JSON.stringify(R)));
-  assert.match(day('2026-11-16').note, /30\/11/);
-  assert.match(day('2026-11-23').note, /30\/11/);
-  for (let iso = '2026-10-27'; iso <= '2026-11-29'; iso = addDays(iso, 1)) assert.notEqual(day(iso).sessionId, 'jambes', iso);
+  assert.match(day('2026-11-16').note, /kiné/);
+  assert.match(day('2026-11-23').note, /16\/11/);
+  for (let iso = '2026-10-27'; iso <= '2026-11-15'; iso = addDays(iso, 1)) assert.notEqual(day(iso).sessionId, 'jambes', iso);
 });

@@ -31,7 +31,7 @@ test('weekInfo : calendrier jambes', () => {
   assert.deepEqual(
     [weekInfo('2026-11-04').week, weekInfo('2026-11-04').type], ['S16', 'aucune']);
   assert.deepEqual(
-    [weekInfo('2026-11-22').week, weekInfo('2026-11-22').type], ['S18', 'aucune']);
+    [weekInfo('2026-11-22').week, weekInfo('2026-11-22').type], ['S18', 'normale']);
   const after = weekInfo('2026-11-23');
   assert.equal(after.type, 'normale');
   assert.equal(after.week, null);
@@ -46,8 +46,8 @@ test('weekInfo : bornes, objet Date local et libellés', () => {
   assert.equal(weekInfo(new Date(2026, 9, 5, 23, 59)).week, 'S12');
   assert.equal(weekInfo(new Date(2026, 9, 4, 0, 1)).week, 'S11');
   const info = weekInfo('2026-11-18');
-  assert.equal(info.label, 'Pas de jambes');
-  assert.match(info.note, /30\/11/);
+  assert.equal(info.label, 'Normale');
+  assert.match(info.note, /kiné/);
   assert.equal(weekInfo('2026-10-02').label, WEEK_TYPES.legere.label);
 });
 

@@ -90,6 +90,8 @@ const session = (id, name, weekday, rest, blocks, more = {}) => ({ id, name, wee
 // step-up poids du corps, step-up lesté, fentes, fentes bulgares et step-down, thrusters en dernier.
 export const KNEE_GUARD = {
   since: '2026-10-27',
+  // Kiné du 13/11 : tout peut reprendre, un nouveau mouvement de genou par semaine, à charge réduite. Date de levée par exercice.
+  release: { presse: '2026-11-16' },
   exercises: [
     'step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc', 'presse',
     'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100',
@@ -104,7 +106,7 @@ const RAMP_RULE = {
   'mollet-presse': { repMin: 12, repMax: 15, increment: 5, raiseOnLast: true },
 };
 const LEG_RAMP = { dropExercises: ['hip-thrust'], leadBlocks: [one('jx2', 'hip-thrust', 120), one('jx3', 'sdt-roumain', 90)], sets: 3, exercises: RAMP_RULE };
-const RAMP_NOTE = 'Sans fentes, presse ni thrusters. 8-12 reps (mollets 12-15), 2-3 reps en réserve, jamais à l\'échec.';
+const RAMP_NOTE = 'Sans fentes ni thrusters. 8-12 reps (mollets 12-15), 2-3 reps en réserve, jamais à l\'échec.';
 const maison = (weekday) => session('wallball-maison', 'Wall balls maison', weekday, 90, [one('w1', 'wallball-reel')], { home: true });
 const chrono = (id, exId) => session(id, 'Wall balls, chrono', 6, 60, [one('c1', exId)], { home: true, scheduledOnly: true });
 
@@ -209,7 +211,9 @@ export const CYCLES = [
       { date: '2026-11-11', sessionId: null, note: 'Voyage retour' },
       { date: '2026-11-12', sessionId: null, note: 'Cours Hyrox adapté, à la place de la sortie de course : sans wall balls, thrusters, fentes, burpees broad jump, sled push lourd, rameur ni course. Arrêt à la première sensation au genou' },
       { date: '2026-11-13', sessionId: 'epaule-bras', from: 'b1-derniere-charge', adjust: { loadFactor: 0.9 }, note: 'Charges du bloc 1 moins 10 %, RIR 2-3' },
-      { date: '2026-11-16', sessionId: null, note: 'Reprise du genou, pas de jambes avant le 30/11' },
+      { date: '2026-11-16', sessionId: 'jambes', from: 'b3-fondations',
+        adjust: { ...LEG_RAMP, loads: { 'hip-thrust': 45, 'sdt-roumain': 24, 'leg-curl': 55, 'mollet-presse': 140 } },
+        note: `Reprise des jambes avec l'accord du kiné (13/11). Presse légère en plus : 3 séries, charge facile, amplitude contrôlée sans descendre sous 90° de flexion, 3 reps en réserve. ${RAMP_NOTE}` },
       { date: '2026-11-18', sessionId: 'pec-dos', from: 'b1-derniere-charge' },
       { date: '2026-11-20', sessionId: 'epaule-bras', from: 'b1-derniere-charge' },
     ],
@@ -219,10 +223,10 @@ export const CYCLES = [
     intent: 'Le genou d\'abord, la barre remonte. Retrouver les charges, poser les bases Hyrox.',
     start: '2026-11-23', end: '2026-12-20',
     weeks: [
-      { index: 1, start: '2026-11-23', legs: 'aucune', note: 'Reprise du genou, pas de jambes avant le 30/11' },
+      { index: 1, start: '2026-11-23', legs: 'normale', note: 'Jambes : charges décidées par les reps du 16/11' },
       // Reprise pilotée par les reps (voir RAMP_RULE). Repli : 60 % si le genou parle ou si le kiné le demande.
       // Exclusions genou : voir KNEE_GUARD.
-      { index: 2, start: '2026-11-30', legs: 'normale', note: 'Reprise des jambes : charges de départ fixées, 8-12 reps' },
+      { index: 2, start: '2026-11-30', legs: 'normale', note: 'Jambes : charges décidées par les reps de la séance précédente' },
       { index: 3, start: '2026-12-07', legs: 'normale', note: 'Reprise des jambes : charges décidées par les reps du 30/11' },
       { index: 4, start: '2026-12-14', legs: 'normale', factor: 1, isChallenge: true },
     ],
@@ -260,12 +264,12 @@ export const CYCLES = [
       chrono('wallball-chrono-50', 'wallball-50'),
     ],
     schedule: [
-      { date: '2026-11-23', sessionId: null, note: 'Reprise du genou, pas de jambes avant le 30/11' },
+      { date: '2026-11-23', sessionId: 'jambes', adjust: LEG_RAMP,
+        note: `${RAMP_NOTE} Charge montée d'un cran si la dernière série du 16/11 a dépassé la fourchette. Courbature de plus de 48 h : garder les charges du 16/11 et prévenir le coach course` },
       { date: '2026-11-26', sessionId: null, note: 'Cours Hyrox allégé ou sauté, à la sensation' },
       { date: '2026-11-28', sessionId: null, note: 'Wall balls en pause jusqu\'à l\'avis du kiné' },
-      { date: '2026-11-30', sessionId: 'jambes',
-        adjust: { ...LEG_RAMP, loads: { 'hip-thrust': 45, 'sdt-roumain': 24, 'leg-curl': 55, 'mollet-presse': 140 } },
-        note: `${RAMP_NOTE} Seulement si le genou est resté silencieux et si le kiné ne dit pas le contraire, sinon 60 %` },
+      { date: '2026-11-30', sessionId: 'jambes', adjust: LEG_RAMP,
+        note: `${RAMP_NOTE} Les reps de la séance précédente décident de la charge. Genou à surveiller, retour à 60 % s'il parle` },
       { date: '2026-12-07', sessionId: 'jambes', adjust: LEG_RAMP,
         note: `${RAMP_NOTE} Charge montée d'un cran si la dernière série du 30/11 a dépassé la fourchette. Si courbature de plus de 48 h après le 30/11 : garder les charges du 30/11 et prévenir le coach course` },
       { date: '2026-12-19', sessionId: 'wallball-chrono-50' },
