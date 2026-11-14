@@ -369,7 +369,7 @@ test('genou : rampe jambes dès le 14/11 sans fentes ni thrusters, presse légè
     const p = prog(d.from);
     const { session } = applyAdjust(p, sess(p, 'jambes'), d.adjust);
     assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')),
-      ['hip-thrust', 'sdt-roumain', 'presse+mollet-presse', 'leg-curl', 'pallof-press'], iso);
+      ['hip-thrust', 'sdt-roumain', 'presse+mollet-presse', 'leg-curl', 'pelvic-drop-lest'], iso);
   }
 });
 

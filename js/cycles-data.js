@@ -28,6 +28,7 @@ export const EXERCISES = Object.fromEntries([
   E('tirage-poulie-haute-1bras', 'Tirage poulie haute un bras, à genoux', 3, 10, 12, 2.5, 'cable'),
   E('ecarte-poulie', 'Écarté poulie vis-à-vis', 3, 12, 15, 2.5, 'cable'),
   BW('pompes', 'Pompes', 3, 10, 25, { note: 'Max moins 2 reps (RIR 2), gainage serré' }),
+  E('pelvic-drop-lest', 'Pelvic drop lesté sur marche', 3, 10, 12, 1, 'dumbbell', { note: `${ONE}. Debout sur une marche, jambe d'appui presque tendue, bassin qui descend côté libre puis remonte, sans rotation`, start: { load: 6 } }),
   E('pallof-press', 'Pallof press câble', 3, 10, 12, 2.5, 'cable', { note: 'Par côté. Le buste ne tourne pas' }),
   E('face-pull', 'Face pull corde', 3, 12, 15, 2.5, 'cable'),
   E('elevation-laterale-poulie', 'Élévation latérale poulie', 3, 12, 15, 1.25, 'cable', { note: 'Au poste vis-à-vis, comme le face pull', start: { load: 5 } }),
@@ -245,7 +246,7 @@ export const CYCLES = [
         ss('j2', 'presse', 'mollet-presse', 90),
         one('j3', 'leg-curl', 60),
         one('j4', 'hip-thrust', 75),
-        one('j5', 'pallof-press', 60),
+        one('j5', 'pelvic-drop-lest', 60),
         wallball('j6', 75),
       ]),
       session('pec-dos', 'Pec / Dos', 3, 90, [
@@ -321,7 +322,7 @@ export const CYCLES = [
         one('j1', 'fentes-marchees', 120),
         one('j2', 'presse', 120),
         ss('j3', 'sdt-roumain', 'mollet-presse', 75),
-        one('j4', 'pallof-press', 60),
+        one('j4', 'pelvic-drop-lest', 60),
         { id: 'j5', type: 'emom', exercises: ['wallball-thruster'], minutes: 10, repsPerMinute: 12 },
       ]),
       session('pec-dos', 'Pec / Dos', 3, 90, [
