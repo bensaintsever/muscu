@@ -51,6 +51,7 @@ export const EXERCISES = Object.fromEntries([
   BW('fentes-pdc', 'Fentes marchées poids du corps', 3, 20, 20, { repUnit: 'm', repStep: 5 }),
   // Bloc 3
   E('maintien-oh', 'Maintien haltères au-dessus de la tête', 5, 20, 20, 0, 'bodyweight', { unit: 'reps', repUnit: 's', repStep: 5, note: 'Maintien seul, sans thrusters. Mêmes haltères que d\'habitude, saisis la durée tenue' }),
+  E('leg-extension', 'Leg extension', 3, 10, 15, 5, 'machine', { note: 'Amplitude de 90° à 30° environ, montée contrôlée, descente en 3 s, sans verrouiller ni coup sec', start: { load: 30 } }),
   E('presse', 'Presse à cuisses', 3, 10, 12, 10, 'machine', { note: 'Pas de rebond en bas, genoux dans l\'axe' }),
   E('hip-thrust', 'Hip thrust barre', 3, 8, 12, 2.5, 'barbell', { start: { load: 40 } }),
   E('farmer-carry', 'Farmer carry haltères', 3, 40, 40, 2, 'dumbbell', { repUnit: 'm', repStep: 10, note: `${ONE}. Distance en mètres`, start: { load: 18 } }),
@@ -92,9 +93,9 @@ const session = (id, name, weekday, rest, blocks, more = {}) => ({ id, name, wee
 export const KNEE_GUARD = {
   since: '2026-10-27',
   // Kiné du 13/11 : tout peut reprendre, un nouveau mouvement de genou par semaine, à charge réduite. Date de levée par exercice.
-  release: { presse: '2026-11-14', 'step-up': '2026-11-23' },
+  release: { presse: '2026-11-14', 'leg-extension': '2026-11-14', 'step-up': '2026-11-23' },
   exercises: [
-    'step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc', 'presse',
+    'step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc', 'presse', 'leg-extension',
     'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100',
   ],
 };
@@ -105,9 +106,10 @@ const RAMP_RULE = {
   'sdt-roumain': { repMin: 8, repMax: 12, increment: 2, raiseOnLast: true },
   'leg-curl': { repMin: 8, repMax: 12, increment: 5, raiseOnLast: true },
   'mollet-presse': { repMin: 12, repMax: 15, increment: 5, raiseOnLast: true },
+  'leg-extension': { repMin: 10, repMax: 15, increment: 5, raiseOnLast: true },
 };
 const LEG_RAMP = { dropExercises: ['hip-thrust'], leadBlocks: [one('jx2', 'hip-thrust', 120), one('jx3', 'sdt-roumain', 90)], sets: 3, exercises: RAMP_RULE };
-// 23/11 : step-up lesté haltères en plus, deuxième mouvement de genou (après la presse du 14/11), charge réduite.
+// 23/11 : step-up lesté haltères en plus, deuxième mouvement de genou (après la leg extension du 14/11), charge réduite.
 const LEG_RAMP_STEP = { ...LEG_RAMP, extraBlocks: [one('jx4', 'step-up', 90)], exercises: { ...RAMP_RULE, 'step-up': { sets: 3, repMin: 8, repMax: 12, increment: 2, raiseOnLast: true } } };
 const RAMP_NOTE = 'Sans fentes ni thrusters. 8-12 reps (mollets 12-15), 2-3 reps en réserve, jamais à l\'échec.';
 const maison = (weekday) => session('wallball-maison', 'Wall balls maison', weekday, 90, [one('w1', 'wallball-reel')], { home: true });
@@ -216,7 +218,7 @@ export const CYCLES = [
       { date: '2026-11-13', sessionId: 'epaule-bras', from: 'b1-derniere-charge', adjust: { loadFactor: 0.9 }, note: 'Charges du bloc 1 moins 10 %, RIR 2-3' },
       { date: '2026-11-14', sessionId: 'jambes', from: 'b3-fondations',
         adjust: { ...LEG_RAMP, loads: { 'hip-thrust': 45, 'sdt-roumain': 24, 'leg-curl': 55, 'mollet-presse': 140 } },
-        note: `Reprise des jambes avec l'accord du kiné (13/11). Presse légère en plus : 3 séries, charge facile, amplitude contrôlée sans descendre sous 90° de flexion, 3 reps en réserve. ${RAMP_NOTE}` },
+        note: `Reprise des jambes avec l'accord du kiné (13/11). Leg extension légère en plus, à la place de la presse : 3 séries, charge facile (30 kg proposés, à régler), de 90° à 30° environ, descente en 3 s, 3 reps en réserve. ${RAMP_NOTE}` },
       { date: '2026-11-16', sessionId: null, note: 'Jambes faites samedi 14/11, repos de course et de salle' },
       { date: '2026-11-18', sessionId: 'pec-dos', from: 'b1-derniere-charge' },
       { date: '2026-11-20', sessionId: 'epaule-bras', from: 'b1-derniere-charge' },
@@ -245,7 +247,7 @@ export const CYCLES = [
     sessions: [
       session('jambes', 'Jambes', 1, 90, [
         one('j1', 'fentes-marchees', 120),
-        ss('j2', 'presse', 'mollet-presse', 90),
+        ss('j2', 'leg-extension', 'mollet-presse', 90),
         one('j3', 'leg-curl', 60),
         one('j4', 'hip-thrust', 75),
         one('j5', 'pelvic-drop-lest', 60),
@@ -269,7 +271,7 @@ export const CYCLES = [
     ],
     schedule: [
       { date: '2026-11-23', sessionId: 'jambes', adjust: { ...LEG_RAMP_STEP, loads: { 'step-up': 8 } },
-        note: `${RAMP_NOTE} Step-up lesté haltères en plus, seulement si la presse du 14/11 n'a rien donné au genou pendant 48 h : 8 kg par main, marche basse, genou d'appui dans l'axe du pied, 3 × 8-12 par jambe. Charge montée d'un cran si la dernière série du 14/11 a dépassé la fourchette. Courbature de plus de 48 h : garder les charges du 14/11 et prévenir le coach course` },
+        note: `${RAMP_NOTE} Step-up lesté haltères en plus, seulement si la leg extension du 14/11 n'a rien donné au genou pendant 48 h : 8 kg par main, marche basse, genou d'appui dans l'axe du pied, 3 × 8-12 par jambe. Charge montée d'un cran si la dernière série du 14/11 a dépassé la fourchette. Courbature de plus de 48 h : garder les charges du 14/11 et prévenir le coach course` },
       { date: '2026-11-26', sessionId: null, note: 'Cours Hyrox allégé ou sauté, à la sensation' },
       { date: '2026-11-28', sessionId: null, note: 'Wall balls en pause jusqu\'à l\'avis du kiné' },
       { date: '2026-11-30', sessionId: 'jambes', adjust: LEG_RAMP_STEP,
