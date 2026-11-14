@@ -17,12 +17,12 @@ const WEEK_SCHEDULE = {
   5: 'lourde', 6: 'lourde', 7: 'moyenne', 8: 'legere',
   9: 'lourde', 10: 'moyenne', 11: 'legere',
   12: 'lourde', 13: 'moyenne', 14: 'legere',
-  15: 'lourde', 16: 'aucune', 17: 'aucune', 18: 'normale',
+  15: 'lourde', 16: 'aucune', 17: 'normale', 18: 'normale',
 };
 
 const WEEK_NOTES = {
   16: 'Pas de jambes cette semaine',
-  17: 'Maroc, pas de jambes',
+  17: 'Retour du Maroc, jambes reprises samedi 14/11',
   18: 'Reprise des jambes, kiné du 13/11 favorable',
 };
 

@@ -79,15 +79,16 @@ test('cours Hyrox : dernier le 22/10, pause jusqu\'au 11/11, reprise adaptée le
   assert.equal(hyroxClassOn('2027-02-11', '2027-02-13'), false); // 2 jours avant la course
 });
 
-test('Maroc, jambes reprises le 16/11, Pec/Dos normal le 18/11, Noël', () => {
+test('Maroc, jambes reprises le 14/11, Pec/Dos normal le 18/11, Noël', () => {
   assert.equal(day('2026-11-04').sessionId, 'atlas-a');
   assert.equal(day('2026-11-11').sessionId, null);
   const d13 = day('2026-11-13');
   assert.deepEqual([d13.sessionId, d13.from, d13.adjust.loadFactor], ['epaule-bras', 'b1-derniere-charge', 0.9]);
   assert.deepEqual([day('2026-11-18').sessionId, day('2026-11-18').from, day('2026-11-18').adjust.sets, day('2026-11-18').note], ['pec-dos', 'b1-derniere-charge', undefined, null]);
   assert.deepEqual([day('2026-11-20').sessionId, day('2026-11-20').from, day('2026-11-20').adjust.loadFactor], ['epaule-bras', 'b1-derniere-charge', undefined]);
-  assert.equal(day('2026-11-16').sessionId, 'jambes');
-  assert.equal(day('2026-11-16').weekType, 'normale');
+  assert.equal(day('2026-11-14').sessionId, 'jambes');
+  assert.equal(day('2026-11-14').weekType, 'normale');
+  assert.equal(day('2026-11-16').sessionId, null);
   assert.equal(day('2026-11-23').sessionId, 'jambes');
   assert.equal(day('2026-12-23').sessionId, 'treve-a');
   const d28 = day('2026-12-28');
@@ -361,8 +362,8 @@ test('26/10 : jambes sans mouvement de genou (hip thrust, soulevé de terre roum
   assert.ok(!testsInWeek(R, '2026-10-26').some((t) => t.sessionId === 'jambes'));
 });
 
-test('genou : rampe jambes dès le 16/11 sans fentes ni thrusters, presse légère, hip thrust et SDT roumain en tête', () => {
-  for (const iso of ['2026-11-16', '2026-11-23', '2026-11-30', '2026-12-07']) {
+test('genou : rampe jambes dès le 14/11 sans fentes ni thrusters, presse légère, hip thrust et SDT roumain en tête', () => {
+  for (const iso of ['2026-11-14', '2026-11-23', '2026-11-30', '2026-12-07']) {
     const d = day(iso);
     assert.equal(d.sessionId, 'jambes', iso);
     const p = prog(d.from);
@@ -372,7 +373,7 @@ test('genou : rampe jambes dès le 16/11 sans fentes ni thrusters, presse légè
   }
 });
 
-test('genou : wall balls, thrusters et fentes en pause partout à partir du 27/10 (presse levée le 16/11), défis compris', () => {
+test('genou : wall balls, thrusters et fentes en pause partout à partir du 27/10 (presse levée le 14/11), défis compris', () => {
   const banned = ['step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc',
     'presse', 'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100'];
   for (let iso = '2026-10-27'; iso <= '2027-03-01'; iso = addDays(iso, 1)) {
@@ -383,7 +384,7 @@ test('genou : wall balls, thrusters et fentes en pause partout à partir du 27/1
     const ids = exIds(applyAdjust(p, s, d.adjust).session);
     assert.ok(ids.length, `${iso} ${d.sessionId} vide`);
     for (const id of banned) {
-      if (id === 'presse' && iso >= '2026-11-16') continue; // levée par le kiné le 13/11
+      if (id === 'presse' && iso >= '2026-11-14') continue; // levée par le kiné le 13/11
       assert.ok(!ids.includes(id), `${iso} ${d.sessionId} ${id}`);
     }
   }
@@ -398,8 +399,8 @@ test('genou : wall balls, thrusters et fentes en pause partout à partir du 27/1
   assert.ok(!day('2026-10-26').adjust.dropExercises.includes('presse'));
 });
 
-test('reprise jambes : charges de départ le 16/11, puis les reps décident le 23/11, la suite dans la continuité', () => {
-  const d30 = day('2026-11-16');
+test('reprise jambes : charges de départ le 14/11, puis les reps décident le 23/11, la suite dans la continuité', () => {
+  const d30 = day('2026-11-14');
   const d07 = day('2026-11-23');
   assert.match(d30.note, /kiné/);
   assert.match(d07.note, /48 h/);
@@ -410,7 +411,7 @@ test('reprise jambes : charges de départ le 16/11, puis les reps décident le 2
   assert.deepEqual([p30.exercises['mollet-presse'].repMin, p30.exercises['mollet-presse'].repMax], [12, 15]);
   assert.equal(p30.exercises['sdt-roumain'].repMax, 12);
 
-  // 16/11 : charges de départ, même avec un historique à 65 kg au leg curl
+  // 14/11 : charges de départ, même avec un historique à 65 kg au leg curl
   const full = { date: '2026-10-06', weekType: 'lourde', sets: [{ load: 65, reps: 10 }] };
   const factors = { loads: d30.adjust.loads };
   for (const [id, load] of [['hip-thrust', 45], ['sdt-roumain', 24], ['leg-curl', 55], ['mollet-presse', 140]]) {
@@ -419,8 +420,8 @@ test('reprise jambes : charges de départ le 16/11, puis les reps décident le 2
     assert.deepEqual(plannedInput({ exId: id, ex, setIdx: 0, history: [full], weekType: 'normale', factors }), { load, reps: ex.repMin }, id);
   }
 
-  // 23/11 : la dernière série du 16/11 décide, série par série identique sinon
-  const after = (load, reps) => [full, { date: '2026-11-16', weekType: 'normale', sets: reps.map((r) => ({ load, reps: r })) }];
+  // 23/11 : la dernière série du 14/11 décide, série par série identique sinon
+  const after = (load, reps) => [full, { date: '2026-11-14', weekType: 'normale', sets: reps.map((r) => ({ load, reps: r })) }];
   const curl = p07.exercises['leg-curl'];
   assert.equal(suggest(curl, after(55, [10, 11, 13]), 'normale').load, 60);
   assert.equal(plannedInput({ exId: 'leg-curl', ex: curl, setIdx: 0, history: after(55, [10, 11, 13]), weekType: 'normale' }).load, 60);
@@ -438,7 +439,7 @@ test('reprise jambes : charges de départ le 16/11, puis les reps décident le 2
 
 test('semi retiré : plus aucune mention dans les notes, intentions et défis', () => {
   assert.ok(!/semi/i.test(JSON.stringify(R)));
-  assert.match(day('2026-11-16').note, /kiné/);
-  assert.match(day('2026-11-23').note, /16\/11/);
-  for (let iso = '2026-10-27'; iso <= '2026-11-15'; iso = addDays(iso, 1)) assert.notEqual(day(iso).sessionId, 'jambes', iso);
+  assert.match(day('2026-11-14').note, /kiné/);
+  assert.match(day('2026-11-23').note, /14\/11/);
+  for (let iso = '2026-10-27'; iso <= '2026-11-13'; iso = addDays(iso, 1)) assert.notEqual(day(iso).sessionId, 'jambes', iso);
 });
