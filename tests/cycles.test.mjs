@@ -369,11 +369,11 @@ test('genou : rampe jambes dès le 14/11 sans fentes ni thrusters, presse légè
     const p = prog(d.from);
     const { session } = applyAdjust(p, sess(p, 'jambes'), d.adjust);
     assert.deepEqual(session.blocks.map((b) => b.exercises.join('+')),
-      ['hip-thrust', 'sdt-roumain', 'presse+mollet-presse', 'leg-curl', 'pelvic-drop-lest'], iso);
+      ['hip-thrust', 'sdt-roumain', 'presse+mollet-presse', 'leg-curl', 'pelvic-drop-lest', ...(iso >= '2026-11-23' ? ['step-up'] : [])], iso);
   }
 });
 
-test('genou : wall balls, thrusters et fentes en pause partout à partir du 27/10 (presse levée le 14/11), défis compris', () => {
+test('genou : wall balls, thrusters et fentes en pause partout à partir du 27/10 (presse levée le 14/11, step-up le 23/11), défis compris', () => {
   const banned = ['step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc',
     'presse', 'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100'];
   for (let iso = '2026-10-27'; iso <= '2027-03-01'; iso = addDays(iso, 1)) {
@@ -385,6 +385,7 @@ test('genou : wall balls, thrusters et fentes en pause partout à partir du 27/1
     assert.ok(ids.length, `${iso} ${d.sessionId} vide`);
     for (const id of banned) {
       if (id === 'presse' && iso >= '2026-11-14') continue; // levée par le kiné le 13/11
+      if (id === 'step-up' && iso >= '2026-11-23') continue; // deuxième mouvement levé le 23/11
       assert.ok(!ids.includes(id), `${iso} ${d.sessionId} ${id}`);
     }
   }

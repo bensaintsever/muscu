@@ -92,7 +92,7 @@ const session = (id, name, weekday, rest, blocks, more = {}) => ({ id, name, wee
 export const KNEE_GUARD = {
   since: '2026-10-27',
   // Kiné du 13/11 : tout peut reprendre, un nouveau mouvement de genou par semaine, à charge réduite. Date de levée par exercice.
-  release: { presse: '2026-11-14' },
+  release: { presse: '2026-11-14', 'step-up': '2026-11-23' },
   exercises: [
     'step-up', 'fentes-marchees', 'fentes-pdc', 'fentes-circuit', 'fentes-100m', 'rg-fentes', 'fentes-bulgares-pdc', 'presse',
     'wallball-thruster', 'thruster-circuit', 'rg-thrusters', 'wallball-reel', 'wallball-50', 'wallball-100',
@@ -107,6 +107,8 @@ const RAMP_RULE = {
   'mollet-presse': { repMin: 12, repMax: 15, increment: 5, raiseOnLast: true },
 };
 const LEG_RAMP = { dropExercises: ['hip-thrust'], leadBlocks: [one('jx2', 'hip-thrust', 120), one('jx3', 'sdt-roumain', 90)], sets: 3, exercises: RAMP_RULE };
+// 23/11 : step-up lesté haltères en plus, deuxième mouvement de genou (après la presse du 14/11), charge réduite.
+const LEG_RAMP_STEP = { ...LEG_RAMP, extraBlocks: [one('jx4', 'step-up', 90)], exercises: { ...RAMP_RULE, 'step-up': { sets: 3, repMin: 8, repMax: 12, increment: 2, raiseOnLast: true } } };
 const RAMP_NOTE = 'Sans fentes ni thrusters. 8-12 reps (mollets 12-15), 2-3 reps en réserve, jamais à l\'échec.';
 const maison = (weekday) => session('wallball-maison', 'Wall balls maison', weekday, 90, [one('w1', 'wallball-reel')], { home: true });
 const chrono = (id, exId) => session(id, 'Wall balls, chrono', 6, 60, [one('c1', exId)], { home: true, scheduledOnly: true });
@@ -266,13 +268,13 @@ export const CYCLES = [
       chrono('wallball-chrono-50', 'wallball-50'),
     ],
     schedule: [
-      { date: '2026-11-23', sessionId: 'jambes', adjust: LEG_RAMP,
-        note: `${RAMP_NOTE} Charge montée d'un cran si la dernière série du 14/11 a dépassé la fourchette. Courbature de plus de 48 h : garder les charges du 14/11 et prévenir le coach course` },
+      { date: '2026-11-23', sessionId: 'jambes', adjust: { ...LEG_RAMP_STEP, loads: { 'step-up': 8 } },
+        note: `${RAMP_NOTE} Step-up lesté haltères en plus, seulement si la presse du 14/11 n'a rien donné au genou pendant 48 h : 8 kg par main, marche basse, genou d'appui dans l'axe du pied, 3 × 8-12 par jambe. Charge montée d'un cran si la dernière série du 14/11 a dépassé la fourchette. Courbature de plus de 48 h : garder les charges du 14/11 et prévenir le coach course` },
       { date: '2026-11-26', sessionId: null, note: 'Cours Hyrox allégé ou sauté, à la sensation' },
       { date: '2026-11-28', sessionId: null, note: 'Wall balls en pause jusqu\'à l\'avis du kiné' },
-      { date: '2026-11-30', sessionId: 'jambes', adjust: LEG_RAMP,
+      { date: '2026-11-30', sessionId: 'jambes', adjust: LEG_RAMP_STEP,
         note: `${RAMP_NOTE} Les reps de la séance précédente décident de la charge. Genou à surveiller, retour à 60 % s'il parle` },
-      { date: '2026-12-07', sessionId: 'jambes', adjust: LEG_RAMP,
+      { date: '2026-12-07', sessionId: 'jambes', adjust: LEG_RAMP_STEP,
         note: `${RAMP_NOTE} Charge montée d'un cran si la dernière série du 30/11 a dépassé la fourchette. Si courbature de plus de 48 h après le 30/11 : garder les charges du 30/11 et prévenir le coach course` },
       { date: '2026-12-19', sessionId: 'wallball-chrono-50' },
     ],
