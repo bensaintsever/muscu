@@ -247,7 +247,8 @@ export const CYCLES = [
     sessions: [
       session('jambes', 'Jambes', 1, 90, [
         one('j1', 'fentes-marchees', 120),
-        ss('j2', 'leg-extension', 'mollet-presse', 90),
+        one('j2', 'leg-extension', 90),
+        one('j2b', 'mollet-presse', 60),
         one('j3', 'leg-curl', 60),
         one('j4', 'hip-thrust', 75),
         one('j5', 'pelvic-drop-lest', 60),
