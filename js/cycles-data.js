@@ -245,7 +245,6 @@ export const CYCLES = [
         ss('j2', 'presse', 'mollet-presse', 90),
         one('j3', 'leg-curl', 60),
         one('j4', 'hip-thrust', 75),
-        one('j5', 'farmer-carry', 60),
         wallball('j6', 75),
       ]),
       session('pec-dos', 'Pec / Dos', 3, 90, [
@@ -321,7 +320,6 @@ export const CYCLES = [
         one('j1', 'fentes-marchees', 120),
         one('j2', 'presse', 120),
         ss('j3', 'sdt-roumain', 'mollet-presse', 75),
-        one('j4', 'farmer-carry', 60),
         { id: 'j5', type: 'emom', exercises: ['wallball-thruster'], minutes: 10, repsPerMinute: 12 },
       ]),
       session('pec-dos', 'Pec / Dos', 3, 90, [
