@@ -56,13 +56,13 @@ export async function renderHome(root, { live, ctx }) {
   const card = (e, i) => {
     const s = e.session;
     const isHero = e === hero;
-    const adj = applyAdjust(e.program, s, { ...(e.planned ? e.day.adjust : e.day.week?.adjust), ...(s.adjust || {}) });
+    const adj = applyAdjust(e.program, s, cy.withKneeGuard({ ...(e.planned ? e.day.adjust : e.day.week?.adjust), ...(s.adjust || {}) }, day.iso));
     const ids = adj.session.blocks.flatMap((b) => b.exercises).filter((id) => adj.program.exercises[id]);
     const nSets = ids.reduce((a, id) => a + (adj.program.exercises[id]?.sets || 0), 0);
     const last = lastOf(s.id);
     const lastTxt = last ? `Dernière fois ${fmtDate(last.date)} · ${fmtVolume(volumeOf(last))}` : 'Jamais faite';
     const warn = day.weekType === 'aucune' && hasUndulating(s, e.program);
-    const tags = [s.home ? 'Sans salle' : '', s.borrowed ? 'Reprise du bloc précédent' : ''].filter(Boolean).join(' · ');
+    const tags = [s.home ? 'Sans salle' : '', s.borrowed ? 'Séance reprise d\'un autre bloc' : ''].filter(Boolean).join(' · ');
     return `<button class="sess-card${isHero ? ' hero' : ''}" data-start="${i}">
       ${isHero ? `<div class="kicker">${esc(e.kicker)}</div>` : ''}
       <div class="name">${esc(s.name)}</div>

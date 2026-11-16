@@ -259,7 +259,7 @@ test('ajustements : rappel à 2 séries, reprise à 90 %, affûtage sans circuit
   assert.equal(ch.session.blocks.at(-1).id, 'jx');
   // Borrowed : le bloc Reprise (b2-atlas) liste les séances du bloc 1 reprises
   assert.deepEqual(prog('b2-atlas').sessions.filter((s) => s.borrowed).map((s) => [s.id, s.source]),
-    [['epaule-bras', 'b1-derniere-charge'], ['pec-dos', 'b1-derniere-charge']]);
+    [['jambes', 'b3-fondations'], ['epaule-bras', 'b1-derniere-charge'], ['pec-dos', 'b1-derniere-charge']]);
 });
 
 test('EMOM et circuit : étapes de séance', () => {
