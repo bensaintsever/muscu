@@ -205,8 +205,8 @@ export const CYCLES = [
     borrow: [
       // Jambes toujours listées (kiné du 13/11) : charges pilotées par les reps, exclusions genou ajoutées au démarrage.
       { sessionId: 'jambes', from: 'b3-fondations', adjust: LEG_RAMP },
-      { sessionId: 'epaule-bras', from: 'b1-derniere-charge', adjust: { loadFactor: 0.9 } },
-      { sessionId: 'pec-dos', from: 'b1-derniere-charge', adjust: { sets: 2 } },
+      { sessionId: 'epaule-bras', from: 'b1-derniere-charge' },
+      { sessionId: 'pec-dos', from: 'b1-derniere-charge' },
     ],
     schedule: [
       { date: '2026-11-02', sessionId: null, note: 'Maroc' },
