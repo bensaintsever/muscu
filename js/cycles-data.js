@@ -192,27 +192,25 @@ export const CYCLES = [
     ] },
   },
   {
-    id: 'b2-atlas', name: 'Atlas',
-    intent: 'Garder le haut du corps au Maroc, laisser le genou récupérer.',
+    // L'id reste 'b2-atlas' : les séances déjà enregistrées le référencent.
+    id: 'b2-atlas', name: 'Reprise',
+    intent: 'Reprendre la salle après le Maroc, laisser le genou récupérer.',
     start: '2026-11-02', end: '2026-11-22',
     weeks: [
       { index: 1, start: '2026-11-02', label: 'S16' },
       { index: 2, start: '2026-11-09', label: 'S17' },
       { index: 3, start: '2026-11-16', label: 'S18' },
     ],
-    sessions: [
-      session('atlas-a', 'Atlas A (sans salle)', 3, 60, atlasA, { home: true }),
-      session('atlas-b', 'Atlas B (sans salle)', 5, 60, atlasB, { home: true }),
-    ],
+    sessions: [],
     borrow: [
       { sessionId: 'epaule-bras', from: 'b1-derniere-charge', adjust: { loadFactor: 0.9 } },
       { sessionId: 'pec-dos', from: 'b1-derniere-charge', adjust: { sets: 2 } },
     ],
     schedule: [
       { date: '2026-11-02', sessionId: null, note: 'Maroc' },
-      { date: '2026-11-04', sessionId: 'atlas-a', note: 'Maroc' },
-      { date: '2026-11-06', sessionId: 'atlas-b', note: 'Maroc' },
-      { date: '2026-11-09', sessionId: 'atlas-a', note: 'Test pompes : 1 série au maximum' },
+      { date: '2026-11-04', sessionId: null, note: 'Maroc' },
+      { date: '2026-11-06', sessionId: null, note: 'Maroc' },
+      { date: '2026-11-09', sessionId: null, note: 'Maroc' },
       { date: '2026-11-11', sessionId: null, note: 'Voyage retour' },
       { date: '2026-11-12', sessionId: null, note: 'Cours Hyrox adapté, à la place de la sortie de course : sans wall balls, thrusters, fentes, burpees broad jump, sled push lourd, rameur ni course. Arrêt à la première sensation au genou' },
       { date: '2026-11-13', sessionId: 'epaule-bras', from: 'b1-derniere-charge', adjust: { loadFactor: 0.9 }, note: 'Charges du bloc 1 moins 10 %, RIR 2-3' },

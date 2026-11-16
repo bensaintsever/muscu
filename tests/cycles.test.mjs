@@ -80,7 +80,8 @@ test('cours Hyrox : dernier le 22/10, pause jusqu\'au 11/11, reprise adaptée le
 });
 
 test('Maroc, jambes reprises le 14/11, Pec/Dos normal le 18/11, Noël', () => {
-  assert.equal(day('2026-11-04').sessionId, 'atlas-a');
+  assert.equal(day('2026-11-04').sessionId, null);
+  assert.equal(day('2026-11-09').sessionId, null);
   assert.equal(day('2026-11-11').sessionId, null);
   const d13 = day('2026-11-13');
   assert.deepEqual([d13.sessionId, d13.from, d13.adjust.loadFactor], ['epaule-bras', 'b1-derniere-charge', 0.9]);
@@ -256,7 +257,7 @@ test('ajustements : rappel à 2 séries, reprise à 90 %, affûtage sans circuit
   const p4 = prog('b4-moteur');
   const ch = applyAdjust(p4, sess(p4, 'jambes'), { extraBlocks: [{ id: 'jx', type: 'single', exercises: ['farmer-carry'] }] });
   assert.equal(ch.session.blocks.at(-1).id, 'jx');
-  // Borrowed : le bloc Atlas liste les séances du bloc 1 reprises
+  // Borrowed : le bloc Reprise (b2-atlas) liste les séances du bloc 1 reprises
   assert.deepEqual(prog('b2-atlas').sessions.filter((s) => s.borrowed).map((s) => [s.id, s.source]),
     [['epaule-bras', 'b1-derniere-charge'], ['pec-dos', 'b1-derniere-charge']]);
 });
@@ -269,9 +270,9 @@ test('EMOM et circuit : étapes de séance', () => {
   const circ = buildSteps(sess(p5, 'jambes'), p5, { sets: [] }).filter((s) => s.blockIdx === 2);
   assert.equal(circ.length, 12);
   assert.deepEqual(circ.slice(0, 4).map((s) => s.rest), [0, 0, 0, 120]);
-  const pa = prog('b2-atlas');
-  const atlas = buildSteps(sess(pa, 'atlas-a'), pa, { sets: [] });
-  assert.ok(atlas.every((s) => s.rest === 60));
+  const pt = prog('treve');
+  const treve = buildSteps(sess(pt, 'treve-a'), pt, { sets: [] });
+  assert.ok(treve.every((s) => s.rest === 60));
 });
 
 test('durée estimée des séances de salle : 45 à 60 min', () => {
