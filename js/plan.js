@@ -12,7 +12,7 @@ export async function loadPlan() {
   ]);
   const race = hyroxSetting || CYCLES_DEFAULTS.hyroxDate;
   return {
-    stored, edits: edits || {}, override, race, provisional: !hyroxSetting,
+    stored, edits: edits || {}, override, race, provisional: !hyroxSetting && !CYCLES_DEFAULTS.hyroxConfirmed,
     resolved: cy.resolveCycles(CYCLES, { hyroxDate: race }),
   };
 }

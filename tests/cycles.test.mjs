@@ -195,6 +195,7 @@ test('migration : programme déjà modifié à la main appliqué aux blocs, rien
   old.exercises['elevation-laterale'].note = 'Coudes hauts';
   old.sessions.find((s) => s.id === 'jambes').blocks[0].rest = 150;
   old.sessions.find((s) => s.id === 'epaule-bras').blocks[1].rest = 60; // élévation + oiseau
+  old.sessions.find((s) => s.id === 'epaule-bras').blocks.push({ id: 'eb9', type: 'superset', exercises: ['face-pull', 'elevation-laterale-poulie'], rest: 70 });
   const before = structuredClone(old);
   const p1 = prog('b1-derniere-charge', { stored: old });
   assert.equal(p1.exercises['dc-incline-halteres'].name, 'DC incliné (banc 3)');
@@ -202,9 +203,9 @@ test('migration : programme déjà modifié à la main appliqué aux blocs, rien
   assert.equal(p1.exercises['elevation-laterale'].note, 'Coudes hauts');
   assert.equal(p1.exercises['traction-pronation'].sets, 4, 'le format du bloc l\'emporte sur un réglage antérieur');
   assert.equal(sess(p1, 'jambes').blocks[0].rest, 150);
-  // Bloc 3 : même paire élévation + oiseau, repos réglé à la main repris ; ancre prescrite à 2 min gardée
+  // Bloc 3 : même paire élévation poulie + face pull, repos réglé à la main repris ; ancre prescrite à 2 min gardée
   const p3 = prog('b3-fondations', { stored: old });
-  assert.equal(sess(p3, 'epaule-bras').blocks[1].rest, 60);
+  assert.equal(sess(p3, 'epaule-bras').blocks[1].rest, 70);
   assert.equal(sess(p3, 'epaule-bras').blocks[0].rest, 120);
   // Le programme enregistré n'est jamais modifié par la lecture
   assert.deepEqual(old, before);
@@ -444,4 +445,23 @@ test('semi retiré : plus aucune mention dans les notes, intentions et défis', 
   assert.match(day('2026-11-14').note, /kiné/);
   assert.match(day('2026-11-23').note, /14\/11/);
   for (let iso = '2026-10-27'; iso <= '2026-11-13'; iso = addDays(iso, 1)) assert.notEqual(day(iso).sessionId, 'jambes', iso);
+});
+
+test('phase Physique : exercices connus, séries en plus sur épaules et bras, Hyrox le 04/02', () => {
+  const p = prog('b3-fondations');
+  assert.equal(R.find((b) => b.id === 'b3-fondations').name, 'Physique');
+  assert.deepEqual(sess(p, 'epaule-bras').blocks.map((b) => b.exercises.join('+')),
+    ['developpe-barre', 'elevation-laterale-poulie+face-pull', 'barre-front-ez+curl-incline', 'pushdown-corde+curl-marteau-cable']);
+  assert.deepEqual(sess(p, 'pec-dos').blocks.map((b) => b.exercises.join('+')),
+    ['traction-pronation', 'dc-incline-halteres', 'chest-row-incline+ecarte-incline', 'ecarte-banc+tirage-un-bras', 'reverse-crunch']);
+  assert.deepEqual(['elevation-laterale-poulie', 'barre-front-ez', 'curl-incline', 'face-pull'].map((id) => p.exercises[id].sets), [4, 4, 4, 3]);
+  assert.deepEqual([p.exercises['developpe-barre'].repMin, p.exercises['traction-pronation'].repMax], [6, 8]);
+  const t = (id) => R.flatMap((b) => b.tests).find((x) => x.id === id);
+  assert.deepEqual(t('b3-developpe').target, { load: 32.5, reps: 6, sets: 4 });
+  assert.deepEqual(t('b3-traction').target, { reps: 13 });
+  assert.equal(nextRace('2026-11-22').date, '2027-02-04');
+  assert.equal(day('2027-02-04').note, 'Hyrox duo mixte');
+  assert.equal(day('2027-01-25').sessionId, 'repetition-generale');
+  assert.equal(day('2027-01-11').block.id, 'b4-moteur');
+  assert.equal(day('2027-01-18').block.id, 'b5-duo');
 });

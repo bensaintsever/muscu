@@ -3,7 +3,8 @@
 
 export const CYCLES_DEFAULTS = {
   legPlanEnd: '2026-11-22', // fin du calendrier jambes par semaines (weekInfo)
-  hyroxDate: '2027-02-13', // provisoire tant que le réglage kv 'hyroxDate' est vide
+  hyroxDate: '2027-02-04', // confirmé par Benjamin le 16/11 ; le réglage kv 'hyroxDate' passe devant
+  hyroxConfirmed: true,
   moteurStart: '2027-01-04',
 };
 
@@ -225,8 +226,10 @@ export const CYCLES = [
     ],
   },
   {
-    id: 'b3-fondations', name: 'Fondations',
-    intent: 'Le genou d\'abord, la barre remonte. Retrouver les charges, poser les bases Hyrox.',
+    // Phase « Physique », décidée avec Benjamin le 16/11 : sèche jusqu'à début janvier. On garde le lourd sur les
+    // exercices de base, séries en plus sur épaules et bras, exercices connus pour suivre les charges. Id conservé.
+    id: 'b3-fondations', name: 'Physique',
+    intent: 'Sèche : garder la force, mettre en avant épaules et bras. Le genou d\'abord côté jambes.',
     start: '2026-11-23', end: '2026-12-20',
     weeks: [
       { index: 1, start: '2026-11-23', legs: 'normale', note: 'Jambes : charges décidées par les reps du 14/11' },
@@ -237,11 +240,14 @@ export const CYCLES = [
       { index: 4, start: '2026-12-14', legs: 'normale', factor: 1, isChallenge: true },
     ],
     overrides: {
-      'traction-pronation': { sets: 4, repMin: 4, repMax: 6, note: 'Lest 5 kg si le défi du 28/10 a passé 11 reps, sinon 2,5 kg' },
+      'traction-pronation': { sets: 4, repMin: 6, repMax: 8, note: 'Lest 2,5 à 5 kg' },
       'dc-incline-halteres': { sets: 4, repMin: 6, repMax: 10 },
-      'developpe-barre': { sets: 4, repMin: 4, repMax: 6 },
-      'elevation-laterale': { repMin: 12, repMax: 15 },
-      'oiseau-incline': { repMin: 12, repMax: 15 },
+      'developpe-barre': { sets: 4, repMin: 6, repMax: 8 },
+      'elevation-laterale-poulie': { sets: 4, repMin: 12, repMax: 20 },
+      'face-pull': { sets: 3, repMin: 12, repMax: 15 },
+      'barre-front-ez': { sets: 4 },
+      'curl-incline': { sets: 4 },
+      'ecarte-incline': { note: 'Même banc que le chest row, sans changer l\'inclinaison' },
       'mollet-presse': { sets: 3 },
     },
     sessions: [
@@ -257,15 +263,15 @@ export const CYCLES = [
       session('pec-dos', 'Pec / Dos', 3, 90, [
         anchor('pd1', 'traction-pronation'),
         anchor('pd2', 'dc-incline-halteres'),
-        ss('pd3', 'rowing-barre', 'pompes-lestees'),
-        one('pd4', 'ecarte-incline', 60),
-        one('pd5', 'suitcase-carry', 45),
+        ss('pd3', 'chest-row-incline', 'ecarte-incline'),
+        ss('pd4', 'ecarte-banc', 'tirage-un-bras', 75),
+        one('pd5', 'reverse-crunch', 45),
       ]),
       session('epaule-bras', 'Épaule / Bras', 5, 75, [
         anchor('eb1', 'developpe-barre'),
-        ss('eb2', 'elevation-laterale', 'oiseau-incline'),
-        ss('eb3', 'curl-barre', 'barre-front-barre'),
-        ss('eb4', 'extension-triceps-haut', 'curl-cable', 60),
+        ss('eb2', 'elevation-laterale-poulie', 'face-pull'),
+        ss('eb3', 'barre-front-ez', 'curl-incline'),
+        ss('eb4', 'pushdown-corde', 'curl-marteau-cable', 60),
       ]),
       maison(6),
       chrono('wallball-chrono-50', 'wallball-50'),
@@ -284,10 +290,10 @@ export const CYCLES = [
     challenge: { tests: [
       { id: 'b3-fentes', date: '2026-12-14', exerciseId: 'fentes-marchees', kind: 'loadForReps', target: { load: 40, reps: 12, sets: 3 },
         label: 'Fentes marchées : retrouver 40 kg × 3 × 12, RIR 1 au plus bas' },
-      { id: 'b3-traction', date: '2026-12-16', exerciseId: 'traction-pronation', kind: 'loadForReps', target: { load: 7.5, reps: 5, sets: 1 },
-        label: 'Traction pronation lestée 7,5 kg × 5' },
-      { id: 'b3-developpe', date: '2026-12-18', exerciseId: 'developpe-barre', kind: 'loadForReps', target: { load: 35, reps: 5, sets: 1 },
-        label: 'Développé debout 35 kg × 5' },
+      { id: 'b3-traction', date: '2026-12-16', sessionId: 'pec-dos', exerciseId: 'traction-pronation', kind: 'maxReps', target: { reps: 13 },
+        label: 'Tractions pronation : 13 reps en une série, poids du corps' },
+      { id: 'b3-developpe', date: '2026-12-18', sessionId: 'epaule-bras', exerciseId: 'developpe-barre', kind: 'loadForReps', target: { load: 32.5, reps: 6, sets: 4 },
+        label: 'Développé debout 32,5 kg × 6 sur 4 séries, en pleine sèche' },
       { id: 'b3-wallball', date: '2026-12-19', exerciseId: 'wallball-50', kind: 'time', label: 'Premier chrono : 50 wall balls 6 kg' },
     ] },
   },
