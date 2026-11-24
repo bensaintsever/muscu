@@ -240,7 +240,7 @@ export const CYCLES = [
       { index: 4, start: '2026-12-14', legs: 'normale', factor: 1, isChallenge: true },
     ],
     overrides: {
-      'traction-pronation': { sets: 4, repMin: 6, repMax: 8, note: 'Lest 2,5 à 5 kg' },
+      'traction-pronation': { sets: 4, repMin: 6, repMax: 8, note: 'Poids du corps tant que les 4 séries n\'atteignent pas 8 reps, puis lest de 2,5 kg (ceinture ou haltère entre les pieds)' },
       'dc-incline-halteres': { sets: 4, repMin: 6, repMax: 10 },
       'developpe-barre': { sets: 4, repMin: 6, repMax: 8 },
       'elevation-laterale-poulie': { sets: 4, repMin: 12, repMax: 20 },
